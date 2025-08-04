@@ -184,7 +184,7 @@ const AdminImplementation = () => {
   const fetchAvailableUsers = async () => {
     try {
       setLoadingUsers(true);
-      console.log('🔍 === INICIANDO BUSCA DE USUÁRIOS ===');
+      console.log('🔍 === INICIANDO BUSCA DIRETA DO BANCO ===');
       
       // 1. Verificar se estamos autenticados
       const { data: { session } } = await supabase.auth.getSession();
@@ -607,6 +607,99 @@ const AdminImplementation = () => {
                   size="sm"
                 >
                   Verificar Profiles
+                </Button>
+                <Button
+                  onClick={async () => {
+                    console.log('🔍 Verificando tabela user_roles...');
+                    const { data, error } = await supabase
+                      .from('user_roles')
+                      .select('*');
+                    console.log('📋 User Roles data:', data);
+                    console.log('❌ User Roles error:', error);
+                  }}
+                  variant="outline"
+                  size="sm"
+                >
+                  Verificar User Roles
+                </Button>
+                <Button
+                  onClick={async () => {
+                    console.log('🔍 === VERIFICAÇÃO COMPLETA DO BANCO ===');
+                    
+                    // 1. Verificar profiles
+                    console.log('📋 1. Verificando profiles...');
+                    const { data: profilesData, error: profilesError } = await supabase
+                      .from('profiles')
+                      .select('*');
+                    console.log('📊 Profiles encontrados:', profilesData?.length || 0);
+                    console.log('📋 Profiles:', profilesData);
+                    console.log('❌ Profiles error:', profilesError);
+                    
+                    // 2. Verificar user_roles
+                    console.log('🆔 2. Verificando user_roles...');
+                    const { data: rolesData, error: rolesError } = await supabase
+                      .from('user_roles')
+                      .select('*');
+                    console.log('📊 Roles encontradas:', rolesData?.length || 0);
+                    console.log('🆔 Roles:', rolesData);
+                    console.log('❌ Roles error:', rolesError);
+                    
+                    // 3. Verificar auth.users (se possível)
+                    console.log('👤 3. Verificando auth.users...');
+                    const { data: { users }, error: authError } = await supabase.auth.admin.listUsers();
+                    console.log('📊 Usuários auth encontrados:', users?.length || 0);
+                    console.log('👤 Users:', users);
+                    console.log('❌ Auth error:', authError);
+                    
+                    console.log('✅ === VERIFICAÇÃO CONCLUÍDA ===');
+                  }}
+                  variant="outline"
+                  size="sm"
+                >
+                  Verificação Completa
+                </Button>
+                <Button
+                  onClick={async () => {
+                    console.log('🔍 === TESTE DE CADASTRO DE USUÁRIO ===');
+                    
+                    // Simular criação de um usuário de teste
+                    const testUser = {
+                      email: 'teste@exemplo.com',
+                      full_name: 'Usuário Teste',
+                      company: 'Empresa Teste',
+                      phone: '(11) 99999-9999',
+                      role: 'user'
+                    };
+                    
+                    console.log('📝 Tentando criar usuário de teste:', testUser);
+                    
+                    try {
+                      const session = await supabase.auth.getSession();
+                      if (!session.data.session?.access_token) {
+                        console.error('❌ Não autenticado');
+                        return;
+                      }
+                      
+                      const { data, error } = await supabase.functions.invoke('create-user', {
+                        body: testUser,
+                        headers: {
+                          'Authorization': `Bearer ${session.data.session.access_token}`
+                        }
+                      });
+                      
+                      if (error) {
+                        console.error('❌ Erro ao criar usuário:', error);
+                      } else {
+                        console.log('✅ Usuário criado com sucesso:', data);
+                      }
+                    } catch (error) {
+                      console.error('❌ Erro na criação:', error);
+                    }
+                  }}
+                  variant="outline"
+                  size="sm"
+                >
+                  Testar Criação de Usuário
                 </Button>
               </div>
             )}
