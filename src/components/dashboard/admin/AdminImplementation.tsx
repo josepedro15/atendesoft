@@ -340,10 +340,51 @@ const AdminImplementation = () => {
       console.log('🔄 === ATUALIZANDO PROGRESSO ===');
       console.log('📝 Progress ID:', progressId);
       console.log('📊 Dados para atualizar:', data);
+      console.log('🔑 Tipo do progressId:', typeof progressId);
+      console.log('🔑 ProgressId é válido:', progressId && progressId !== 'new');
+      
+      // Verificar se o progressId é válido
+      if (!progressId || progressId === 'new') {
+        console.error('❌ Progress ID inválido:', progressId);
+        toast({
+          title: "Erro",
+          description: "ID de progresso inválido",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      // Verificar se os dados são válidos
+      if (!data || Object.keys(data).length === 0) {
+        console.error('❌ Dados inválidos:', data);
+        toast({
+          title: "Erro",
+          description: "Dados inválidos para atualização",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      // REMOVER CAMPOS INVÁLIDOS - apenas campos que existem na tabela
+      const validData = {
+        status: data.status,
+        notes: data.notes,
+        started_at: data.started_at,
+        completed_at: data.completed_at
+      };
+      
+      // Remover campos undefined/null
+      Object.keys(validData).forEach(key => {
+        if (validData[key as keyof typeof validData] === undefined || validData[key as keyof typeof validData] === null) {
+          delete validData[key as keyof typeof validData];
+        }
+      });
+      
+      console.log('✅ Dados limpos para atualização:', validData);
       
       const { data: updateResult, error } = await supabase
         .from('user_implementation_progress')
-        .update(data)
+        .update(validData)
         .eq('id', progressId)
         .select();
 
@@ -369,7 +410,7 @@ const AdminImplementation = () => {
       console.error('❌ Erro ao atualizar progresso:', error);
       toast({
         title: "Erro",
-        description: "Erro ao atualizar o progresso",
+        description: `Erro ao atualizar o progresso: ${error.message}`,
         variant: "destructive"
       });
     }
