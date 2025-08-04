@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { User, Session } from '@supabase/supabase-js';
 
@@ -20,39 +20,9 @@ export const useAuth = () => {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [userRole, setUserRole] = useState<'admin' | 'user'>('user');
   const [isLoading, setIsLoading] = useState(true);
+  const [isInitialized, setIsInitialized] = useState(false);
 
-  useEffect(() => {
-    // Configurar listener de auth
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-        
-        if (session?.user) {
-          await fetchUserData(session.user.id);
-        } else {
-          setProfile(null);
-          setUserRole('user');
-        }
-        setIsLoading(false);
-      }
-    );
-
-    // Verificar sessão existente
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      
-      if (session?.user) {
-        await fetchUserData(session.user.id);
-      }
-      setIsLoading(false);
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
-
-  const fetchUserData = async (userId: string) => {
+  const fetchUserData = useCallback(async (userId: string) => {
     try {
       // Buscar perfil do usuário
       const { data: profileData, error: profileError } = await supabase
@@ -63,10 +33,10 @@ export const useAuth = () => {
 
       if (profileError && profileError.code !== 'PGRST116') {
         console.error('Erro ao buscar perfil:', profileError);
-        return;
+        setProfile(null);
+      } else {
+        setProfile(profileData);
       }
-
-      setProfile(profileData);
 
       // Buscar role do usuário
       const { data: roleData, error: roleError } = await supabase
@@ -78,21 +48,98 @@ export const useAuth = () => {
       if (roleError && roleError.code !== 'PGRST116') {
         console.error('Erro ao buscar role:', roleError);
         setUserRole('user');
-        return;
+      } else {
+        setUserRole(roleData?.role || 'user');
       }
-
-      setUserRole(roleData?.role || 'user');
     } catch (error) {
       console.error('Erro ao buscar dados do usuário:', error);
+      setProfile(null);
+      setUserRole('user');
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    let mounted = true;
+
+    const initializeAuth = async () => {
+      try {
+        // Verificar sessão existente primeiro
+        const { data: { session: currentSession } } = await supabase.auth.getSession();
+        
+        if (!mounted) return;
+
+        setSession(currentSession);
+        setUser(currentSession?.user ?? null);
+        
+        if (currentSession?.user) {
+          await fetchUserData(currentSession.user.id);
+        } else {
+          setProfile(null);
+          setUserRole('user');
+        }
+      } catch (error) {
+        console.error('Erro ao inicializar auth:', error);
+        if (mounted) {
+          setProfile(null);
+          setUserRole('user');
+        }
+      } finally {
+        if (mounted) {
+          setIsLoading(false);
+          setIsInitialized(true);
+        }
+      }
+    };
+
+    // Configurar listener de auth
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, newSession) => {
+        if (!mounted) return;
+
+        console.log('Auth state changed:', event, newSession?.user?.id);
+        
+        setSession(newSession);
+        setUser(newSession?.user ?? null);
+        
+        if (newSession?.user) {
+          await fetchUserData(newSession.user.id);
+        } else {
+          setProfile(null);
+          setUserRole('user');
+        }
+        
+        if (!isInitialized) {
+          setIsLoading(false);
+          setIsInitialized(true);
+        }
+      }
+    );
+
+    // Inicializar auth
+    initializeAuth();
+
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
+  }, [fetchUserData, isInitialized]);
 
   const signOut = async () => {
-    const { error } = await supabase.auth.signOut();
-    if (error) {
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        console.error('Erro no logout:', error);
+      }
+    } catch (error) {
       console.error('Erro no logout:', error);
     }
   };
+
+  const refreshUserData = useCallback(async () => {
+    if (user) {
+      await fetchUserData(user.id);
+    }
+  }, [user, fetchUserData]);
 
   const isAdmin = userRole === 'admin';
   const isAuthenticated = !!user;
@@ -105,7 +152,8 @@ export const useAuth = () => {
     isAdmin,
     isAuthenticated,
     isLoading,
+    isInitialized,
     signOut,
-    refreshUserData: () => user ? fetchUserData(user.id) : null
+    refreshUserData
   };
 };

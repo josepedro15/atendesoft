@@ -42,20 +42,23 @@ const AdminPayments = () => {
   const [editingPayment, setEditingPayment] = useState<Payment | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadingUsers, setLoadingUsers] = useState(false);
+  const [dataFetched, setDataFetched] = useState(false);
   const [stats, setStats] = useState({
     pending: 0,
     paid: 0,
     overdue: 0
   });
   const { toast } = useToast();
-  const { isAdmin } = useAuth();
+  const { isAdmin, isInitialized } = useAuth();
 
   useEffect(() => {
-    if (isAdmin) {
+    // Só buscar dados se for admin e já foi inicializado
+    if (isAdmin && isInitialized && !dataFetched) {
       fetchPayments();
       fetchAvailableUsers();
+      setDataFetched(true);
     }
-  }, [isAdmin]);
+  }, [isAdmin, isInitialized, dataFetched]);
 
   const fetchPayments = async () => {
     try {
@@ -298,12 +301,25 @@ const AdminPayments = () => {
     return new Date(date).toLocaleDateString('pt-BR');
   };
 
+  // Verificar se é admin
   if (!isAdmin) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
           <h2 className="text-2xl font-bold text-glow text-primary">Acesso Negado</h2>
           <p className="text-muted-foreground mt-2">Você não tem permissão para acessar esta página</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Mostrar loading enquanto não foi inicializado
+  if (!isInitialized) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-4 text-muted-foreground">Carregando pagamentos...</p>
         </div>
       </div>
     );

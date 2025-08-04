@@ -130,16 +130,18 @@ const mockQuickActions = [
 ];
 
 const AdminDashboard = () => {
-  const { isAdmin, isLoading } = useAuth();
+  const { isAdmin, isLoading, isInitialized } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!isLoading && !isAdmin) {
+    // Só redirecionar se já foi inicializado e não é admin
+    if (isInitialized && !isLoading && !isAdmin) {
       navigate('/dashboard');
     }
-  }, [isAdmin, isLoading, navigate]);
+  }, [isAdmin, isLoading, isInitialized, navigate]);
 
-  if (isLoading) {
+  // Mostrar loading enquanto não foi inicializado
+  if (!isInitialized || isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
@@ -150,6 +152,7 @@ const AdminDashboard = () => {
     );
   }
 
+  // Verificar se é admin após inicialização
   if (!isAdmin) {
     return (
       <div className="flex items-center justify-center min-h-screen">

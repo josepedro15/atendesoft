@@ -86,21 +86,18 @@ const AdminImplementation = () => {
   const [selectedUserId, setSelectedUserId] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [loadingUsers, setLoadingUsers] = useState(false);
+  const [dataFetched, setDataFetched] = useState(false);
   const { toast } = useToast();
-  const { isAdmin } = useAuth();
+  const { isAdmin, isInitialized } = useAuth();
 
   useEffect(() => {
-    if (!isAdmin) {
-      toast({
-        title: "Acesso Negado",
-        description: "Você não tem permissão para acessar esta página",
-        variant: "destructive"
-      });
-    } else {
+    // Só buscar dados se for admin e já foi inicializado
+    if (isAdmin && isInitialized && !dataFetched) {
       fetchData();
       fetchAvailableUsers();
+      setDataFetched(true);
     }
-  }, [isAdmin, toast]);
+  }, [isAdmin, isInitialized, dataFetched]);
 
   const fetchData = async () => {
     try {
@@ -324,6 +321,7 @@ const AdminImplementation = () => {
     return Math.round((completedSteps / steps.length) * 100);
   };
 
+  // Verificar se é admin
   if (!isAdmin) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -335,7 +333,8 @@ const AdminImplementation = () => {
     );
   }
 
-  if (loading) {
+  // Mostrar loading enquanto não foi inicializado
+  if (!isInitialized) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
@@ -379,7 +378,11 @@ const AdminImplementation = () => {
       </div>
 
       {/* Lista de Clientes */}
-      {clients.length === 0 ? (
+      {loading ? (
+        <div className="flex items-center justify-center p-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        </div>
+      ) : clients.length === 0 ? (
         <Card className="card-glass">
           <CardContent className="p-8">
             <div className="text-center space-y-4">
