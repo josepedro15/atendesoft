@@ -2,15 +2,13 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { CheckCircle, Clock, Play, Pause, Plus, Edit } from "lucide-react";
+import { CheckCircle, Clock, Play, Edit } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
 
 interface ImplementationStep {
   id: string;
@@ -37,38 +35,80 @@ interface UserProgress {
 const AdminImplementation = () => {
   const [steps, setSteps] = useState<ImplementationStep[]>([]);
   const [userProgress, setUserProgress] = useState<UserProgress[]>([]);
-  const [selectedUser, setSelectedUser] = useState<string | null>(null);
   const [editingProgress, setEditingProgress] = useState<UserProgress | null>(null);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+  const { isAdmin, user } = useAuth();
 
   useEffect(() => {
-    fetchData();
-  }, []);
+    if (isAdmin) {
+      fetchData();
+    } else {
+      setLoading(false);
+      toast({
+        title: "Acesso Negado",
+        description: "Você não tem permissão para acessar esta página",
+        variant: "destructive"
+      });
+    }
+  }, [isAdmin]);
 
   const fetchData = async () => {
     try {
+      setLoading(true);
+      
       // Buscar etapas de implementação
       const { data: stepsData, error: stepsError } = await supabase
         .from('implementation_steps')
         .select('*')
         .order('step_number');
 
-      if (stepsError) throw stepsError;
+      if (stepsError) {
+        console.error('Erro ao buscar etapas:', stepsError);
+        throw stepsError;
+      }
 
       // Buscar progresso dos usuários
       const { data: progressData, error: progressError } = await supabase
         .from('user_implementation_progress')
         .select(`
           *,
-          implementation_steps(*),
-          profiles!inner(full_name, company)
+          implementation_steps(*)
         `);
 
-      if (progressError) throw progressError;
+      if (progressError) {
+        console.error('Erro ao buscar progresso:', progressError);
+        throw progressError;
+      }
+
+      // Buscar perfis dos usuários
+      const userIds = [...new Set(progressData?.map(p => p.user_id) || [])];
+      let profilesData = [];
+      
+      if (userIds.length > 0) {
+        const { data: profiles, error: profilesError } = await supabase
+          .from('profiles')
+          .select('user_id, full_name, company')
+          .in('user_id', userIds);
+
+        if (profilesError) {
+          console.error('Erro ao buscar perfis:', profilesError);
+          throw profilesError;
+        }
+
+        profilesData = profiles || [];
+      }
+
+      // Combinar os dados
+      const profilesMap = new Map(profilesData.map(p => [p.user_id, p]));
+      const enrichedProgress = progressData?.map(progress => ({
+        ...progress,
+        user_profile: profilesMap.get(progress.user_id)
+      })) || [];
 
       setSteps(stepsData || []);
-      setUserProgress(progressData as any || []);
+      setUserProgress(enrichedProgress);
+      
     } catch (error) {
       console.error('Erro ao buscar dados:', error);
       toast({
@@ -107,36 +147,6 @@ const AdminImplementation = () => {
     }
   };
 
-  const createProgressForUser = async (userId: string) => {
-    try {
-      const progressEntries = steps.map(step => ({
-        user_id: userId,
-        step_id: step.id,
-        status: 'pending' as const
-      }));
-
-      const { error } = await supabase
-        .from('user_implementation_progress')
-        .insert(progressEntries);
-
-      if (error) throw error;
-
-      toast({
-        title: "Sucesso",
-        description: "Progresso de implementação criado para o usuário"
-      });
-
-      fetchData();
-    } catch (error) {
-      console.error('Erro ao criar progresso:', error);
-      toast({
-        title: "Erro",
-        description: "Não foi possível criar o progresso de implementação",
-        variant: "destructive"
-      });
-    }
-  };
-
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'completed':
@@ -148,32 +158,59 @@ const AdminImplementation = () => {
     }
   };
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'completed':
-        return <Badge variant="default" className="bg-green-600">Concluído</Badge>;
-      case 'in_progress':
-        return <Badge variant="default" className="bg-blue-600">Em Progresso</Badge>;
-      default:
-        return <Badge variant="secondary">Pendente</Badge>;
-    }
-  };
-
   if (loading) {
     return <div className="text-center p-8">Carregando dados de implementação...</div>;
   }
 
-  const groupedProgress = userProgress.reduce((acc, progress) => {
+  if (!isAdmin) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h2 className="text-2xl font-bold text-glow text-primary">Acesso Negado</h2>
+          <p className="text-muted-foreground">Você não tem permissão para acessar esta página</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Verificar se há dados
+  if (!userProgress || userProgress.length === 0) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h2 className="text-2xl font-bold text-glow text-primary">Gerenciamento de Implementações</h2>
+          <p className="text-muted-foreground">Acompanhe e atualize o progresso de implementação dos clientes</p>
+        </div>
+        
+        <Card className="card-glass border-primary/20">
+          <CardContent className="p-8">
+            <div className="text-center space-y-4">
+              <div className="text-6xl">📋</div>
+              <h3 className="text-xl font-semibold">Nenhuma implementação encontrada</h3>
+              <p className="text-muted-foreground">
+                Não há dados de implementação disponíveis no momento. 
+                Os dados aparecerão aqui quando os clientes iniciarem o processo de implementação.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Agrupar progresso por usuário
+  const groupedProgress: Record<string, { user: any; steps: UserProgress[] }> = {};
+  
+  userProgress.forEach(progress => {
     const userId = progress.user_id;
-    if (!acc[userId]) {
-      acc[userId] = {
+    if (!groupedProgress[userId]) {
+      groupedProgress[userId] = {
         user: progress.user_profile,
         steps: []
       };
     }
-    acc[userId].steps.push(progress);
-    return acc;
-  }, {} as Record<string, { user: any; steps: UserProgress[] }>);
+    groupedProgress[userId].steps.push(progress);
+  });
 
   return (
     <div className="space-y-6">
@@ -211,7 +248,12 @@ const AdminImplementation = () => {
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      {getStatusBadge(progress.status)}
+                      <div className={progress.status === 'completed' ? 'bg-green-600 text-white px-2 py-1 rounded-full text-xs' : 
+                                     progress.status === 'in_progress' ? 'bg-blue-600 text-white px-2 py-1 rounded-full text-xs' : 
+                                     'bg-gray-600 text-white px-2 py-1 rounded-full text-xs'}>
+                        {progress.status === 'completed' ? 'Concluído' : 
+                         progress.status === 'in_progress' ? 'Em Progresso' : 'Pendente'}
+                      </div>
                       <Button
                         variant="outline"
                         size="sm"
