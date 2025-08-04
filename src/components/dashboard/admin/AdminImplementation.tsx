@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { CheckCircle, Clock, Play, Edit, Plus } from "lucide-react";
+import { CheckCircle, Clock, Play, Edit, Plus, Users, GitBranch } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -36,243 +36,158 @@ interface Client {
   progress: UserProgress[];
 }
 
+// Dados mockados para demonstração
+const mockSteps: ImplementationStep[] = [
+  {
+    id: '1',
+    title: 'Configuração Inicial',
+    description: 'Setup do ambiente e configurações básicas',
+    step_number: 1
+  },
+  {
+    id: '2',
+    title: 'Instalação de Ferramentas',
+    description: 'Instalação e configuração das ferramentas necessárias',
+    step_number: 2
+  },
+  {
+    id: '3',
+    title: 'Configuração de Fluxos',
+    description: 'Criação e configuração dos fluxos de automação',
+    step_number: 3
+  },
+  {
+    id: '4',
+    title: 'Testes Internos',
+    description: 'Realização de testes para validação',
+    step_number: 4
+  },
+  {
+    id: '5',
+    title: 'Em Produção',
+    description: 'Sistema em produção e monitoramento',
+    step_number: 5
+  }
+];
+
+const mockClients: Client[] = [
+  {
+    user_id: '1',
+    full_name: 'João Silva',
+    company: 'Empresa ABC Ltda',
+    email: 'joao@empresaabc.com',
+    progress: [
+      {
+        id: '1',
+        user_id: '1',
+        step_id: '1',
+        status: 'completed',
+        started_at: '2024-01-01',
+        completed_at: '2024-01-02',
+        step: mockSteps[0]
+      },
+      {
+        id: '2',
+        user_id: '1',
+        step_id: '2',
+        status: 'completed',
+        started_at: '2024-01-03',
+        completed_at: '2024-01-05',
+        step: mockSteps[1]
+      },
+      {
+        id: '3',
+        user_id: '1',
+        step_id: '3',
+        status: 'in_progress',
+        started_at: '2024-01-06',
+        step: mockSteps[2]
+      }
+    ]
+  },
+  {
+    user_id: '2',
+    full_name: 'Maria Santos',
+    company: 'Tech Solutions',
+    email: 'maria@techsolutions.com',
+    progress: [
+      {
+        id: '4',
+        user_id: '2',
+        step_id: '1',
+        status: 'completed',
+        started_at: '2024-01-01',
+        completed_at: '2024-01-03',
+        step: mockSteps[0]
+      },
+      {
+        id: '5',
+        user_id: '2',
+        step_id: '2',
+        status: 'in_progress',
+        started_at: '2024-01-04',
+        step: mockSteps[1]
+      }
+    ]
+  },
+  {
+    user_id: '3',
+    full_name: 'Pedro Costa',
+    company: 'Digital Marketing Pro',
+    email: 'pedro@digitalmarketing.com',
+    progress: [
+      {
+        id: '6',
+        user_id: '3',
+        step_id: '1',
+        status: 'pending',
+        step: mockSteps[0]
+      }
+    ]
+  }
+];
+
 const AdminImplementation = () => {
-  const [steps, setSteps] = useState<ImplementationStep[]>([]);
-  const [clients, setClients] = useState<Client[]>([]);
+  const [steps, setSteps] = useState<ImplementationStep[]>(mockSteps);
+  const [clients, setClients] = useState<Client[]>(mockClients);
   const [editingProgress, setEditingProgress] = useState<UserProgress | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const { toast } = useToast();
-  const { isAdmin, user } = useAuth();
+  const { isAdmin } = useAuth();
 
   useEffect(() => {
-    if (isAdmin) {
-      fetchData();
-    } else {
-      setLoading(false);
+    if (!isAdmin) {
       toast({
         title: "Acesso Negado",
         description: "Você não tem permissão para acessar esta página",
         variant: "destructive"
       });
     }
-  }, [isAdmin]);
-
-  const fetchData = async () => {
-    try {
-      setLoading(true);
-      
-      // Buscar etapas de implementação
-      const { data: stepsData, error: stepsError } = await supabase
-        .from('implementation_steps')
-        .select('*')
-        .order('step_number');
-
-      if (stepsError) {
-        console.error('Erro ao buscar etapas:', stepsError);
-        throw stepsError;
-      }
-
-      // Buscar todos os clientes (usuários com role 'user')
-      const { data: clientsData, error: clientsError } = await supabase
-        .from('profiles')
-        .select(`
-          user_id,
-          full_name,
-          company
-        `);
-
-      if (clientsError) {
-        console.error('Erro ao buscar clientes:', clientsError);
-        throw clientsError;
-      }
-
-      // Filtrar apenas usuários que não são admin (clientes)
-      const { data: userRolesData, error: rolesError } = await supabase
-        .from('user_roles')
-        .select('user_id, role');
-
-      if (rolesError) {
-        console.error('Erro ao buscar roles:', rolesError);
-        throw rolesError;
-      }
-
-      // Criar mapa de roles para filtrar apenas clientes
-      const rolesMap = new Map(userRolesData?.map(r => [r.user_id, r.role]) || []);
-      const clientsOnly = clientsData?.filter(client => rolesMap.get(client.user_id) === 'user') || [];
-
-      if (clientsError) {
-        console.error('Erro ao buscar clientes:', clientsError);
-        throw clientsError;
-      }
-
-      // Buscar emails dos usuários via Edge Function
-      const userIds = clientsOnly.map(c => c.user_id);
-      const session = await supabase.auth.getSession();
-      const { data: emailsData, error: emailsError } = await supabase.functions.invoke('get-user-emails', {
-        headers: {
-          'Authorization': `Bearer ${session.data.session?.access_token}`
-        }
-      });
-
-      if (emailsError) {
-        console.error('Erro ao buscar emails:', emailsError);
-        // Continuar sem emails se houver erro
-      }
-
-      // Buscar progresso de implementação para todos os clientes
-      const { data: progressData, error: progressError } = await supabase
-        .from('user_implementation_progress')
-        .select(`
-          *,
-          implementation_steps(*)
-        `)
-        .in('user_id', userIds);
-
-      if (progressError) {
-        console.error('Erro ao buscar progresso:', progressError);
-        throw progressError;
-      }
-
-      // Combinar os dados
-      const clientsWithProgress: Client[] = clientsOnly.map(client => {
-        const userProgress = (progressData || []).filter(p => p.user_id === client.user_id);
-        const userEmail = emailsData?.users?.find(u => u.id === client.user_id)?.email || 'email@exemplo.com';
-        
-        return {
-          user_id: client.user_id,
-          full_name: client.full_name || 'Nome não informado',
-          company: client.company || 'Empresa não informada',
-          email: userEmail,
-          progress: userProgress
-        };
-      });
-
-      setSteps(stepsData || []);
-      setClients(clientsWithProgress);
-      
-      // Se não há clientes, criar dados de teste
-      if (clientsWithProgress.length === 0) {
-        console.log('Nenhum cliente encontrado, criando dados de teste...');
-        await createTestData(stepsData || []);
-      }
-      
-    } catch (error) {
-      console.error('Erro ao buscar dados:', error);
-      toast({
-        title: "Erro",
-        description: "Não foi possível carregar os dados de implementação",
-        variant: "destructive"
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const createTestData = async (stepsData: ImplementationStep[]) => {
-    try {
-      // Criar perfis de teste
-      const testProfiles = [
-        { user_id: 'test-user-1', full_name: 'João Silva', company: 'Empresa ABC Ltda' },
-        { user_id: 'test-user-2', full_name: 'Maria Santos', company: 'Tech Solutions' },
-        { user_id: 'test-user-3', full_name: 'Pedro Costa', company: 'Digital Marketing Pro' },
-        { user_id: 'test-user-4', full_name: 'Ana Oliveira', company: 'E-commerce Plus' }
-      ];
-
-      // Inserir perfis
-      for (const profile of testProfiles) {
-        await supabase
-          .from('profiles')
-          .upsert(profile, { onConflict: 'user_id' });
-      }
-
-      // Inserir roles de usuário (clientes)
-      for (const profile of testProfiles) {
-        await supabase
-          .from('user_roles')
-          .upsert({ user_id: profile.user_id, role: 'user' }, { onConflict: 'user_id' });
-      }
-
-      // Criar progresso de implementação para alguns clientes
-      const testProgress = [
-        { user_id: 'test-user-1', step_id: stepsData[0]?.id, status: 'completed' },
-        { user_id: 'test-user-1', step_id: stepsData[1]?.id, status: 'completed' },
-        { user_id: 'test-user-1', step_id: stepsData[2]?.id, status: 'in_progress' },
-        { user_id: 'test-user-2', step_id: stepsData[0]?.id, status: 'completed' },
-        { user_id: 'test-user-2', step_id: stepsData[1]?.id, status: 'in_progress' },
-        { user_id: 'test-user-3', step_id: stepsData[0]?.id, status: 'pending' }
-      ];
-
-      for (const progress of testProgress) {
-        if (progress.step_id) {
-          await supabase
-            .from('user_implementation_progress')
-            .upsert(progress, { onConflict: 'user_id,step_id' });
-        }
-      }
-
-      toast({
-        title: "Dados de Teste Criados",
-        description: "Foram criados 4 clientes de teste para demonstração"
-      });
-
-      // Recarregar dados
-      fetchData();
-    } catch (error) {
-      console.error('Erro ao criar dados de teste:', error);
-    }
-  };
-
-  const createProgressForClient = async (userId: string) => {
-    try {
-      const progressEntries = steps.map(step => ({
-        user_id: userId,
-        step_id: step.id,
-        status: 'pending' as const
-      }));
-
-      const { error } = await supabase
-        .from('user_implementation_progress')
-        .insert(progressEntries);
-
-      if (error) throw error;
-
-      toast({
-        title: "Sucesso",
-        description: "Progresso de implementação criado para o cliente"
-      });
-
-      fetchData();
-    } catch (error) {
-      console.error('Erro ao criar progresso:', error);
-      toast({
-        title: "Erro",
-        description: "Não foi possível criar o progresso de implementação",
-        variant: "destructive"
-      });
-    }
-  };
+  }, [isAdmin, toast]);
 
   const updateProgress = async (progressId: string, data: Partial<UserProgress>) => {
     try {
-      const { error } = await supabase
-        .from('user_implementation_progress')
-        .update(data)
-        .eq('id', progressId);
-
-      if (error) throw error;
+      // Simular atualização
+      setClients(prevClients => 
+        prevClients.map(client => ({
+          ...client,
+          progress: client.progress.map(progress => 
+            progress.id === progressId 
+              ? { ...progress, ...data }
+              : progress
+          )
+        }))
+      );
 
       toast({
-        title: "Sucesso",
-        description: "Status atualizado com sucesso"
+        title: "Progresso Atualizado",
+        description: "O status da implementação foi atualizado com sucesso",
       });
-
-      fetchData();
-      setEditingProgress(null);
     } catch (error) {
       console.error('Erro ao atualizar progresso:', error);
       toast({
         title: "Erro",
-        description: "Não foi possível atualizar o status",
+        description: "Erro ao atualizar o progresso",
         variant: "destructive"
       });
     }
@@ -289,225 +204,158 @@ const AdminImplementation = () => {
     }
   };
 
-  if (loading) {
-    return <div className="text-center p-8">Carregando dados de implementação...</div>;
-  }
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'completed':
+        return <div className="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800">Concluído</div>;
+      case 'in_progress':
+        return <div className="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800">Em Progresso</div>;
+      default:
+        return <div className="px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-800">Pendente</div>;
+    }
+  };
+
+  const getProgressPercentage = (client: Client) => {
+    if (!steps.length) return 0;
+    const completedSteps = client.progress.filter(p => p.status === 'completed').length;
+    return Math.round((completedSteps / steps.length) * 100);
+  };
 
   if (!isAdmin) {
     return (
-      <div className="space-y-6">
-        <div>
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
           <h2 className="text-2xl font-bold text-glow text-primary">Acesso Negado</h2>
-          <p className="text-muted-foreground">Você não tem permissão para acessar esta página</p>
+          <p className="text-muted-foreground mt-2">Você não tem permissão para acessar esta página</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold text-glow text-primary">Gerenciamento de Implementações</h2>
-        <p className="text-muted-foreground">Acompanhe e atualize o progresso de implementação dos clientes</p>
+    <div className="space-y-6 p-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <div className="h-10 w-10 rounded-lg bg-primary/20 flex items-center justify-center">
+            <GitBranch className="h-5 w-5 text-primary" />
+          </div>
+          <div>
+            <h1 className="text-3xl font-bold text-glow text-primary">
+              Gerenciamento de Implementações
+            </h1>
+            <p className="text-muted-foreground">
+              Acompanhe e gerencie o progresso das implementações dos clientes
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Users className="h-4 w-4" />
+          <span>{clients.length} clientes</span>
+        </div>
       </div>
 
-      {clients.length === 0 ? (
-        <Card className="card-glass border-primary/20">
-          <CardContent className="p-8">
-            <div className="text-center space-y-4">
-              <div className="text-6xl">👥</div>
-              <h3 className="text-xl font-semibold">Nenhum cliente encontrado</h3>
-              <p className="text-muted-foreground">
-                Não há clientes cadastrados no sistema. 
-                Os clientes aparecerão aqui quando forem criados.
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="grid gap-6">
-          {clients.map((client) => {
-            const completedSteps = client.progress.filter(p => p.status === 'completed').length;
-            const totalSteps = steps.length;
-            const hasProgress = client.progress.length > 0;
-
-            return (
-              <Card key={client.user_id} className="card-glass border-primary/20">
-                <CardHeader>
-                  <CardTitle className="flex items-center justify-between">
-                    <div>
-                      <span className="text-lg">{client.full_name}</span>
-                      <div className="text-sm text-muted-foreground mt-1">
-                        {client.email} • {client.company}
+      {/* Lista de Clientes */}
+      <div className="grid gap-6">
+        {clients.map((client) => (
+          <Card key={client.user_id} className="card-glass">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="text-xl">{client.full_name}</CardTitle>
+                  <CardDescription>{client.company}</CardDescription>
+                  <p className="text-sm text-muted-foreground mt-1">{client.email}</p>
+                </div>
+                <div className="text-right">
+                  <div className="text-2xl font-bold text-primary">
+                    {getProgressPercentage(client)}%
+                  </div>
+                  <div className="text-sm text-muted-foreground">Progresso Geral</div>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {steps.map((step) => {
+                  const progress = client.progress.find(p => p.step_id === step.id);
+                  const status = progress?.status || 'pending';
+                  
+                  return (
+                    <div key={step.id} className="flex items-center justify-between p-3 rounded-lg border border-border/50">
+                      <div className="flex items-center gap-3">
+                        {getStatusIcon(status)}
+                        <div>
+                          <h4 className="font-medium">{step.title}</h4>
+                          <p className="text-sm text-muted-foreground">{step.description}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        {getStatusBadge(status)}
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setEditingProgress(progress || { id: 'new', user_id: client.user_id, step_id: step.id, status: 'pending', step } as UserProgress)}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
                       </div>
                     </div>
-                    <div className="text-right">
-                      {hasProgress ? (
-                        <div className="text-sm text-muted-foreground">
-                          {completedSteps} de {totalSteps} etapas concluídas
-                        </div>
-                      ) : (
-                        <Button
-                          size="sm"
-                          onClick={() => createProgressForClient(client.user_id)}
-                          className="bg-primary hover:bg-primary/90"
-                        >
-                          <Plus className="h-4 w-4 mr-2" />
-                          Iniciar Implementação
-                        </Button>
-                      )}
-                    </div>
-                  </CardTitle>
-                  <CardDescription>
-                    {hasProgress 
-                      ? `Progresso: ${Math.round((completedSteps / totalSteps) * 100)}%`
-                      : 'Implementação ainda não iniciada'
-                    }
-                  </CardDescription>
-                </CardHeader>
-                
-                {hasProgress && (
-                  <CardContent>
-                    <div className="space-y-4">
-                      {steps
-                        .sort((a, b) => a.step_number - b.step_number)
-                        .map((step) => {
-                          const progress = client.progress.find(p => p.step_id === step.id);
-                          
-                          return (
-                            <div key={step.id} className="flex items-center justify-between p-4 glass rounded-lg">
-                              <div className="flex items-center gap-3">
-                                {progress ? getStatusIcon(progress.status) : <Clock className="h-4 w-4 text-gray-500" />}
-                                <div>
-                                  <h4 className="font-medium">{step.title}</h4>
-                                  <p className="text-sm text-muted-foreground">{step.description}</p>
-                                  {progress?.notes && (
-                                    <p className="text-sm text-blue-400 mt-1">Nota: {progress.notes}</p>
-                                  )}
-                                </div>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <div className={progress?.status === 'completed' ? 'bg-green-600 text-white px-2 py-1 rounded-full text-xs' : 
-                                               progress?.status === 'in_progress' ? 'bg-blue-600 text-white px-2 py-1 rounded-full text-xs' : 
-                                               'bg-gray-600 text-white px-2 py-1 rounded-full text-xs'}>
-                                  {progress?.status === 'completed' ? 'Concluído' : 
-                                   progress?.status === 'in_progress' ? 'Em Progresso' : 'Pendente'}
-                                </div>
-                                {progress && (
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => setEditingProgress(progress)}
-                                  >
-                                    <Edit className="h-4 w-4" />
-                                  </Button>
-                                )}
-                              </div>
-                            </div>
-                          );
-                        })}
-                    </div>
-                  </CardContent>
-                )}
-              </Card>
-            );
-          })}
-        </div>
-      )}
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
 
-      {editingProgress && (
-        <Dialog open={!!editingProgress} onOpenChange={() => setEditingProgress(null)}>
-          <DialogContent className="card-glass border-primary/20">
-            <DialogHeader>
-              <DialogTitle>Atualizar Status da Etapa</DialogTitle>
-            </DialogHeader>
-            <ProgressForm
-              progress={editingProgress}
-              onSubmit={(data) => updateProgress(editingProgress.id, data)}
-              onCancel={() => setEditingProgress(null)}
-            />
-          </DialogContent>
-        </Dialog>
-      )}
+      {/* Dialog para editar progresso */}
+      <Dialog open={!!editingProgress} onOpenChange={() => setEditingProgress(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Editar Progresso</DialogTitle>
+          </DialogHeader>
+          {editingProgress && (
+            <div className="space-y-4">
+              <div>
+                <Label>Status</Label>
+                <Select
+                  value={editingProgress.status}
+                  onValueChange={(value) => setEditingProgress({ ...editingProgress, status: value as any })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="pending">Pendente</SelectItem>
+                    <SelectItem value="in_progress">Em Progresso</SelectItem>
+                    <SelectItem value="completed">Concluído</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Observações</Label>
+                <Textarea
+                  value={editingProgress.notes || ''}
+                  onChange={(e) => setEditingProgress({ ...editingProgress, notes: e.target.value })}
+                  placeholder="Adicione observações sobre o progresso..."
+                />
+              </div>
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setEditingProgress(null)}>
+                  Cancelar
+                </Button>
+                <Button onClick={() => {
+                  updateProgress(editingProgress.id, editingProgress);
+                  setEditingProgress(null);
+                }}>
+                  Salvar
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
-  );
-};
-
-const ProgressForm = ({ 
-  progress, 
-  onSubmit, 
-  onCancel 
-}: { 
-  progress: UserProgress; 
-  onSubmit: (data: any) => void;
-  onCancel: () => void;
-}) => {
-  const [formData, setFormData] = useState({
-    status: progress.status,
-    notes: progress.notes || ''
-  });
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    const updateData: any = {
-      status: formData.status,
-      notes: formData.notes
-    };
-
-    if (formData.status === 'in_progress' && !progress.started_at) {
-      updateData.started_at = new Date().toISOString();
-    }
-
-    if (formData.status === 'completed') {
-      updateData.completed_at = new Date().toISOString();
-      if (!progress.started_at) {
-        updateData.started_at = new Date().toISOString();
-      }
-    }
-
-    onSubmit(updateData);
-  };
-
-  return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div>
-        <Label>Etapa: {progress.step.title}</Label>
-        <p className="text-sm text-muted-foreground">{progress.step.description}</p>
-      </div>
-      
-      <div>
-        <Label htmlFor="status">Status</Label>
-        <Select
-          value={formData.status}
-          onValueChange={(value) => setFormData({ ...formData, status: value as any })}
-        >
-          <SelectTrigger>
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="pending">Pendente</SelectItem>
-            <SelectItem value="in_progress">Em Progresso</SelectItem>
-            <SelectItem value="completed">Concluído</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-      
-      <div>
-        <Label htmlFor="notes">Observações</Label>
-        <Textarea
-          id="notes"
-          value={formData.notes}
-          onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-          placeholder="Adicione observações sobre esta etapa..."
-        />
-      </div>
-      
-      <div className="flex gap-2">
-        <Button type="submit">Atualizar</Button>
-        <Button type="button" variant="outline" onClick={onCancel}>Cancelar</Button>
-      </div>
-    </form>
   );
 };
 
