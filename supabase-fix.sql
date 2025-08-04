@@ -121,8 +121,12 @@ ON profiles
 FOR SELECT 
 USING (has_role(auth.uid(), 'admin'::app_role));
 
--- Política para admins gerenciarem user_implementation_progress
-DROP POLICY IF EXISTS "Admins can manage implementation progress" ON user_implementation_progress;
+-- REMOVER POLÍTICA CONFLITANTE E CRIAR NOVA PARA user_implementation_progress
+DROP POLICY IF EXISTS "Users can view their own progress" ON user_implementation_progress;
+DROP POLICY IF EXISTS "Admins can view all progress" ON user_implementation_progress;
+DROP POLICY IF EXISTS "Admins can manage progress" ON user_implementation_progress;
+
+-- Política única para admins gerenciarem user_implementation_progress
 CREATE POLICY "Admins can manage implementation progress" 
 ON user_implementation_progress 
 FOR ALL 
