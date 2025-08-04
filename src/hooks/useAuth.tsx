@@ -95,8 +95,6 @@ export const useAuth = () => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, newSession) => {
         if (!mounted) return;
-
-        console.log('Auth state changed:', event, newSession?.user?.id);
         
         setSession(newSession);
         setUser(newSession?.user ?? null);
@@ -122,7 +120,7 @@ export const useAuth = () => {
       mounted = false;
       subscription.unsubscribe();
     };
-  }, [fetchUserData, isInitialized]);
+  }, [fetchUserData]);
 
   const signOut = async () => {
     try {
