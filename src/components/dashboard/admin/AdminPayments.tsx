@@ -9,8 +9,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
-import { Calendar, DollarSign, Edit, Plus, CheckCircle, Clock, XCircle } from "lucide-react";
+import { Calendar, DollarSign, Edit, Plus, CheckCircle, Clock, XCircle, AlertCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
 
 interface Payment {
   id: string;
@@ -28,19 +29,39 @@ interface Payment {
   };
 }
 
+interface AvailableUser {
+  user_id: string;
+  full_name: string;
+  company: string;
+}
+
 const AdminPayments = () => {
   const [payments, setPayments] = useState<Payment[]>([]);
+  const [availableUsers, setAvailableUsers] = useState<AvailableUser[]>([]);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [editingPayment, setEditingPayment] = useState<Payment | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadingUsers, setLoadingUsers] = useState(false);
+  const [stats, setStats] = useState({
+    pending: 0,
+    paid: 0,
+    overdue: 0
+  });
   const { toast } = useToast();
+  const { isAdmin } = useAuth();
 
   useEffect(() => {
-    fetchPayments();
-  }, []);
+    if (isAdmin) {
+      fetchPayments();
+      fetchAvailableUsers();
+    }
+  }, [isAdmin]);
 
   const fetchPayments = async () => {
     try {
+      setLoading(true);
+      
+      // Buscar pagamentos com informações do usuário
       const { data, error } = await supabase
         .from('payments')
         .select(`
@@ -49,9 +70,22 @@ const AdminPayments = () => {
         `)
         .order('due_date', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Erro ao buscar pagamentos:', error);
+        throw error;
+      }
 
-      setPayments(data as any || []);
+      const paymentsData = data || [];
+      setPayments(paymentsData as any);
+
+      // Calcular estatísticas
+      const statsData = {
+        pending: paymentsData.filter((p: any) => p.status === 'pending').reduce((sum: number, p: any) => sum + parseFloat(p.amount), 0),
+        paid: paymentsData.filter((p: any) => p.status === 'paid').reduce((sum: number, p: any) => sum + parseFloat(p.amount), 0),
+        overdue: paymentsData.filter((p: any) => p.status === 'overdue').reduce((sum: number, p: any) => sum + parseFloat(p.amount), 0)
+      };
+      setStats(statsData);
+
     } catch (error) {
       console.error('Erro ao buscar pagamentos:', error);
       toast({
@@ -64,13 +98,90 @@ const AdminPayments = () => {
     }
   };
 
+  const fetchAvailableUsers = async () => {
+    try {
+      setLoadingUsers(true);
+      
+      // Buscar todos os usuários com role 'user' (clientes)
+      const { data: userRolesData, error: rolesError } = await supabase
+        .from('user_roles')
+        .select('user_id, role')
+        .eq('role', 'user');
+
+      if (rolesError) {
+        console.error('Erro ao buscar roles:', rolesError);
+        setAvailableUsers([]);
+        return;
+      }
+
+      if (userRolesData && userRolesData.length > 0) {
+        const userIds = userRolesData.map(r => r.user_id);
+        
+        // Buscar perfis dos usuários
+        const { data: profilesData, error: profilesError } = await supabase
+          .from('profiles')
+          .select('user_id, full_name, company')
+          .in('user_id', userIds);
+
+        if (!profilesError && profilesData) {
+          setAvailableUsers(profilesData.map(profile => ({
+            user_id: profile.user_id,
+            full_name: profile.full_name || 'Nome não informado',
+            company: profile.company || 'Empresa não informada'
+          })));
+        }
+      } else {
+        setAvailableUsers([]);
+      }
+    } catch (error) {
+      console.error('Erro ao buscar usuários disponíveis:', error);
+      setAvailableUsers([]);
+    } finally {
+      setLoadingUsers(false);
+    }
+  };
+
   const handleCreatePayment = async (paymentData: any) => {
     try {
+      // Validar dados obrigatórios
+      if (!paymentData.user_id || !paymentData.amount || !paymentData.due_date) {
+        toast({
+          title: "Erro",
+          description: "Preencha todos os campos obrigatórios",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Converter amount para número
+      const amount = parseFloat(paymentData.amount);
+      if (isNaN(amount) || amount <= 0) {
+        toast({
+          title: "Erro",
+          description: "Valor deve ser um número positivo",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      const paymentToInsert = {
+        user_id: paymentData.user_id,
+        amount: amount,
+        currency: paymentData.currency || 'BRL',
+        status: paymentData.status || 'pending',
+        due_date: paymentData.due_date,
+        paid_date: paymentData.status === 'paid' ? paymentData.paid_date : null,
+        description: paymentData.description || ''
+      };
+
       const { error } = await supabase
         .from('payments')
-        .insert(paymentData);
+        .insert(paymentToInsert);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Erro ao criar pagamento:', error);
+        throw error;
+      }
 
       toast({
         title: "Sucesso",
@@ -83,7 +194,7 @@ const AdminPayments = () => {
       console.error('Erro ao criar pagamento:', error);
       toast({
         title: "Erro",
-        description: "Não foi possível criar o pagamento",
+        description: "Não foi possível criar o pagamento. Verifique se você tem permissão.",
         variant: "destructive"
       });
     }
@@ -134,7 +245,7 @@ const AdminPayments = () => {
 
       fetchPayments();
     } catch (error) {
-      console.error('Erro ao marcar pagamento como pago:', error);
+      console.error('Erro ao marcar como pago:', error);
       toast({
         title: "Erro",
         description: "Não foi possível marcar o pagamento como pago",
@@ -147,212 +258,249 @@ const AdminPayments = () => {
     switch (status) {
       case 'paid':
         return <CheckCircle className="h-4 w-4 text-green-500" />;
+      case 'pending':
+        return <Clock className="h-4 w-4 text-yellow-500" />;
       case 'overdue':
         return <XCircle className="h-4 w-4 text-red-500" />;
-      case 'cancelled':
-        return <XCircle className="h-4 w-4 text-gray-500" />;
       default:
-        return <Clock className="h-4 w-4 text-yellow-500" />;
+        return <AlertCircle className="h-4 w-4 text-gray-500" />;
     }
   };
 
   const getStatusBadge = (status: string) => {
-    const statusMap = {
-      pending: { label: 'Pendente', variant: 'secondary' as const },
-      paid: { label: 'Pago', variant: 'default' as const },
-      overdue: { label: 'Vencido', variant: 'destructive' as const },
-      cancelled: { label: 'Cancelado', variant: 'outline' as const }
-    };
-
-    const statusInfo = statusMap[status as keyof typeof statusMap] || statusMap.pending;
-    return <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>;
+    switch (status) {
+      case 'paid':
+        return <Badge className="bg-green-100 text-green-800">Pago</Badge>;
+      case 'pending':
+        return <Badge className="bg-yellow-100 text-yellow-800">Pendente</Badge>;
+      case 'overdue':
+        return <Badge className="bg-red-100 text-red-800">Vencido</Badge>;
+      case 'cancelled':
+        return <Badge className="bg-gray-100 text-gray-800">Cancelado</Badge>;
+      default:
+        return <Badge className="bg-gray-100 text-gray-800">{status}</Badge>;
+    }
   };
 
   const isOverdue = (dueDate: string, status: string) => {
-    return status === 'pending' && new Date(dueDate) < new Date();
+    if (status === 'paid' || status === 'cancelled') return false;
+    return new Date(dueDate) < new Date();
   };
 
-  if (loading) {
-    return <div className="text-center p-8">Carregando pagamentos...</div>;
+  const formatCurrency = (amount: number, currency: string) => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: currency
+    }).format(amount);
+  };
+
+  const formatDate = (date: string) => {
+    return new Date(date).toLocaleDateString('pt-BR');
+  };
+
+  if (!isAdmin) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-glow text-primary">Acesso Negado</h2>
+          <p className="text-muted-foreground mt-2">Você não tem permissão para acessar esta página</p>
+        </div>
+      </div>
+    );
   }
 
-  const totalPending = payments
-    .filter(p => p.status === 'pending')
-    .reduce((acc, p) => acc + p.amount, 0);
-
-  const totalPaid = payments
-    .filter(p => p.status === 'paid')
-    .reduce((acc, p) => acc + p.amount, 0);
-
-  const totalOverdue = payments
-    .filter(p => isOverdue(p.due_date, p.status))
-    .reduce((acc, p) => acc + p.amount, 0);
-
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-2xl font-bold text-glow text-primary">Gerenciamento de Pagamentos</h2>
-          <p className="text-muted-foreground">Gerencie pagamentos e cobranças dos clientes</p>
+    <div className="space-y-6 p-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <div className="h-10 w-10 rounded-lg bg-primary/20 flex items-center justify-center">
+            <DollarSign className="h-5 w-5 text-primary" />
+          </div>
+          <div>
+            <h1 className="text-3xl font-bold text-glow text-primary">
+              Gerenciamento de Pagamentos
+            </h1>
+            <p className="text-muted-foreground">
+              Gerencie pagamentos e cobranças dos clientes
+            </p>
+          </div>
         </div>
-
-        <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-          <DialogTrigger asChild>
-            <Button className="gap-2">
-              <Plus className="h-4 w-4" />
-              Novo Pagamento
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="card-glass border-primary/20">
-            <DialogHeader>
-              <DialogTitle>Criar Novo Pagamento</DialogTitle>
-            </DialogHeader>
-            <PaymentForm onSubmit={handleCreatePayment} />
-          </DialogContent>
-        </Dialog>
+        <Button
+          onClick={() => setIsCreateDialogOpen(true)}
+          className="bg-primary hover:bg-primary/90"
+        >
+          <Plus className="h-4 w-4 mr-2" />
+          Novo Pagamento
+        </Button>
       </div>
 
-      {/* Cards de Resumo */}
-      <div className="grid gap-6 md:grid-cols-3">
-        <Card className="card-glass border-primary/20">
+      {/* Estatísticas */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <Card className="card-glass border-yellow-300/30 bg-yellow-500/10">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Pendente</CardTitle>
             <Clock className="h-4 w-4 text-yellow-500" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-yellow-500">
-              R$ {totalPending.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+              {formatCurrency(stats.pending, 'BRL')}
             </div>
           </CardContent>
         </Card>
 
-        <Card className="card-glass border-primary/20">
+        <Card className="card-glass border-green-300/30 bg-green-500/10">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Pago</CardTitle>
             <CheckCircle className="h-4 w-4 text-green-500" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-green-500">
-              R$ {totalPaid.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+              {formatCurrency(stats.paid, 'BRL')}
             </div>
           </CardContent>
         </Card>
 
-        <Card className="card-glass border-primary/20">
+        <Card className="card-glass border-red-300/30 bg-red-500/10">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Vencido</CardTitle>
             <XCircle className="h-4 w-4 text-red-500" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-red-500">
-              R$ {totalOverdue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+              {formatCurrency(stats.overdue, 'BRL')}
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Tabela de Pagamentos */}
-      <Card className="card-glass border-primary/20">
+      {/* Lista de Pagamentos */}
+      <Card className="card-glass">
         <CardHeader>
           <CardTitle>Lista de Pagamentos</CardTitle>
           <CardDescription>Visualize e gerencie todos os pagamentos</CardDescription>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Cliente</TableHead>
-                <TableHead>Empresa</TableHead>
-                <TableHead>Descrição</TableHead>
-                <TableHead>Valor</TableHead>
-                <TableHead>Vencimento</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Data Pagamento</TableHead>
-                <TableHead className="text-right">Ações</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {payments.map((payment) => (
-                <TableRow 
-                  key={payment.id}
-                  className={isOverdue(payment.due_date, payment.status) ? 'bg-red-50/5' : ''}
-                >
-                  <TableCell className="font-medium">
-                    {payment.user_profile?.full_name || 'Não informado'}
-                  </TableCell>
-                  <TableCell>{payment.user_profile?.company || 'Não informado'}</TableCell>
-                  <TableCell>{payment.description || 'Sem descrição'}</TableCell>
-                  <TableCell className="font-medium">
-                    {payment.currency} {payment.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      {isOverdue(payment.due_date, payment.status) && (
-                        <XCircle className="h-4 w-4 text-red-500" />
-                      )}
-                      {new Date(payment.due_date).toLocaleDateString('pt-BR')}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      {getStatusIcon(payment.status)}
-                      {getStatusBadge(payment.status)}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    {payment.paid_date ? new Date(payment.paid_date).toLocaleDateString('pt-BR') : '-'}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex gap-2 justify-end">
-                      {payment.status === 'pending' && (
+          {loading ? (
+            <div className="flex items-center justify-center p-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            </div>
+          ) : payments.length === 0 ? (
+            <div className="text-center p-8">
+              <DollarSign className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-semibold mb-2">Nenhum pagamento encontrado</h3>
+              <p className="text-muted-foreground">
+                Clique em "Novo Pagamento" para criar o primeiro pagamento.
+              </p>
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Cliente</TableHead>
+                  <TableHead>Empresa</TableHead>
+                  <TableHead>Descrição</TableHead>
+                  <TableHead>Valor</TableHead>
+                  <TableHead>Vencimento</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Data Pagamento</TableHead>
+                  <TableHead>Ações</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {payments.map((payment) => (
+                  <TableRow key={payment.id}>
+                    <TableCell>{payment.user_profile?.full_name || 'N/A'}</TableCell>
+                    <TableCell>{payment.user_profile?.company || 'N/A'}</TableCell>
+                    <TableCell>{payment.description || '-'}</TableCell>
+                    <TableCell className="font-medium">
+                      {formatCurrency(payment.amount, payment.currency)}
+                    </TableCell>
+                    <TableCell className={isOverdue(payment.due_date, payment.status) ? 'text-red-500' : ''}>
+                      {formatDate(payment.due_date)}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        {getStatusIcon(payment.status)}
+                        {getStatusBadge(payment.status)}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      {payment.paid_date ? formatDate(payment.paid_date) : '-'}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex gap-2">
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => markAsPaid(payment.id)}
-                          className="text-green-600 hover:text-green-700"
+                          onClick={() => setEditingPayment(payment)}
                         >
-                          <CheckCircle className="h-4 w-4" />
+                          <Edit className="h-4 w-4" />
                         </Button>
-                      )}
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setEditingPayment(payment)}
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+                        {payment.status !== 'paid' && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => markAsPaid(payment.id)}
+                            className="text-green-600 hover:text-green-700"
+                          >
+                            <CheckCircle className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
         </CardContent>
       </Card>
 
-      {editingPayment && (
-        <Dialog open={!!editingPayment} onOpenChange={() => setEditingPayment(null)}>
-          <DialogContent className="card-glass border-primary/20">
-            <DialogHeader>
-              <DialogTitle>Editar Pagamento</DialogTitle>
-            </DialogHeader>
+      {/* Dialog para criar pagamento */}
+      <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Criar Novo Pagamento</DialogTitle>
+          </DialogHeader>
+          <PaymentForm
+            onSubmit={handleCreatePayment}
+            availableUsers={availableUsers}
+            loadingUsers={loadingUsers}
+          />
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog para editar pagamento */}
+      <Dialog open={!!editingPayment} onOpenChange={() => setEditingPayment(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Editar Pagamento</DialogTitle>
+          </DialogHeader>
+          {editingPayment && (
             <PaymentForm
               payment={editingPayment}
               onSubmit={(data) => handleUpdatePayment(editingPayment.id, data)}
+              availableUsers={availableUsers}
+              loadingUsers={false}
             />
-          </DialogContent>
-        </Dialog>
-      )}
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
 
 const PaymentForm = ({ 
   payment, 
-  onSubmit 
+  onSubmit,
+  availableUsers,
+  loadingUsers
 }: { 
   payment?: Payment; 
-  onSubmit: (data: any) => void; 
+  onSubmit: (data: any) => void;
+  availableUsers: AvailableUser[];
+  loadingUsers: boolean;
 }) => {
   const [formData, setFormData] = useState({
     user_id: payment?.user_id || '',
@@ -363,26 +511,6 @@ const PaymentForm = ({
     paid_date: payment?.paid_date || '',
     description: payment?.description || ''
   });
-
-  const [users, setUsers] = useState<any[]>([]);
-
-  useEffect(() => {
-    fetchUsers();
-  }, []);
-
-  const fetchUsers = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('user_id, full_name, company');
-
-      if (error) throw error;
-
-      setUsers(data || []);
-    } catch (error) {
-      console.error('Erro ao buscar usuários:', error);
-    }
-  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -404,12 +532,13 @@ const PaymentForm = ({
         <Select
           value={formData.user_id}
           onValueChange={(value) => setFormData({ ...formData, user_id: value })}
+          disabled={loadingUsers}
         >
           <SelectTrigger>
-            <SelectValue placeholder="Selecione um cliente" />
+            <SelectValue placeholder={loadingUsers ? "Carregando..." : "Selecione um cliente"} />
           </SelectTrigger>
           <SelectContent>
-            {users.map((user) => (
+            {availableUsers.map((user) => (
               <SelectItem key={user.user_id} value={user.user_id}>
                 {user.full_name} - {user.company}
               </SelectItem>
@@ -425,6 +554,7 @@ const PaymentForm = ({
             id="amount"
             type="number"
             step="0.01"
+            min="0"
             value={formData.amount}
             onChange={(e) => setFormData({ ...formData, amount: parseFloat(e.target.value) || 0 })}
             required
@@ -502,9 +632,11 @@ const PaymentForm = ({
         />
       </div>
 
-      <Button type="submit" className="w-full">
-        {payment ? 'Atualizar' : 'Criar'} Pagamento
-      </Button>
+      <div className="flex justify-end gap-2">
+        <Button type="submit" className="bg-primary hover:bg-primary/90">
+          {payment ? 'Atualizar' : 'Criar'} Pagamento
+        </Button>
+      </div>
     </form>
   );
 };

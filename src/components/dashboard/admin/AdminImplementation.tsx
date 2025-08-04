@@ -36,8 +36,15 @@ interface Client {
   progress: UserProgress[];
 }
 
-// Dados mockados para demonstração
-const mockSteps: ImplementationStep[] = [
+interface AvailableUser {
+  user_id: string;
+  full_name: string;
+  company: string;
+  email: string;
+}
+
+// Etapas padrão de implementação
+const defaultSteps: ImplementationStep[] = [
   {
     id: '1',
     title: 'Configuração Inicial',
@@ -70,88 +77,15 @@ const mockSteps: ImplementationStep[] = [
   }
 ];
 
-const mockClients: Client[] = [
-  {
-    user_id: '1',
-    full_name: 'João Silva',
-    company: 'Empresa ABC Ltda',
-    email: 'joao@empresaabc.com',
-    progress: [
-      {
-        id: '1',
-        user_id: '1',
-        step_id: '1',
-        status: 'completed',
-        started_at: '2024-01-01',
-        completed_at: '2024-01-02',
-        step: mockSteps[0]
-      },
-      {
-        id: '2',
-        user_id: '1',
-        step_id: '2',
-        status: 'completed',
-        started_at: '2024-01-03',
-        completed_at: '2024-01-05',
-        step: mockSteps[1]
-      },
-      {
-        id: '3',
-        user_id: '1',
-        step_id: '3',
-        status: 'in_progress',
-        started_at: '2024-01-06',
-        step: mockSteps[2]
-      }
-    ]
-  },
-  {
-    user_id: '2',
-    full_name: 'Maria Santos',
-    company: 'Tech Solutions',
-    email: 'maria@techsolutions.com',
-    progress: [
-      {
-        id: '4',
-        user_id: '2',
-        step_id: '1',
-        status: 'completed',
-        started_at: '2024-01-01',
-        completed_at: '2024-01-03',
-        step: mockSteps[0]
-      },
-      {
-        id: '5',
-        user_id: '2',
-        step_id: '2',
-        status: 'in_progress',
-        started_at: '2024-01-04',
-        step: mockSteps[1]
-      }
-    ]
-  },
-  {
-    user_id: '3',
-    full_name: 'Pedro Costa',
-    company: 'Digital Marketing Pro',
-    email: 'pedro@digitalmarketing.com',
-    progress: [
-      {
-        id: '6',
-        user_id: '3',
-        step_id: '1',
-        status: 'pending',
-        step: mockSteps[0]
-      }
-    ]
-  }
-];
-
 const AdminImplementation = () => {
-  const [steps, setSteps] = useState<ImplementationStep[]>(mockSteps);
-  const [clients, setClients] = useState<Client[]>(mockClients);
+  const [steps, setSteps] = useState<ImplementationStep[]>(defaultSteps);
+  const [clients, setClients] = useState<Client[]>([]);
+  const [availableUsers, setAvailableUsers] = useState<AvailableUser[]>([]);
   const [editingProgress, setEditingProgress] = useState<UserProgress | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [showAddClientDialog, setShowAddClientDialog] = useState(false);
+  const [selectedUserId, setSelectedUserId] = useState<string>('');
+  const [loading, setLoading] = useState(true);
+  const [loadingUsers, setLoadingUsers] = useState(false);
   const { toast } = useToast();
   const { isAdmin } = useAuth();
 
@@ -162,27 +96,196 @@ const AdminImplementation = () => {
         description: "Você não tem permissão para acessar esta página",
         variant: "destructive"
       });
+    } else {
+      fetchData();
+      fetchAvailableUsers();
     }
   }, [isAdmin, toast]);
 
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      
+      // Buscar etapas de implementação do banco
+      const { data: stepsData, error: stepsError } = await supabase
+        .from('implementation_steps')
+        .select('*')
+        .order('step_number');
+
+      if (stepsError) {
+        console.error('Erro ao buscar etapas:', stepsError);
+        // Usar etapas padrão se não houver no banco
+        setSteps(defaultSteps);
+      } else {
+        setSteps(stepsData || defaultSteps);
+      }
+
+      // Buscar clientes com progresso de implementação
+      const { data: progressData, error: progressError } = await supabase
+        .from('user_implementation_progress')
+        .select(`
+          *,
+          implementation_steps(*)
+        `);
+
+      if (progressError) {
+        console.error('Erro ao buscar progresso:', progressError);
+        setClients([]);
+      } else {
+        // Agrupar progresso por usuário
+        const progressByUser = new Map<string, UserProgress[]>();
+        (progressData || []).forEach((progress: any) => {
+          if (!progressByUser.has(progress.user_id)) {
+            progressByUser.set(progress.user_id, []);
+          }
+          progressByUser.get(progress.user_id)!.push(progress);
+        });
+
+        // Buscar informações dos usuários
+        const userIds = Array.from(progressByUser.keys());
+        if (userIds.length > 0) {
+          const { data: profilesData, error: profilesError } = await supabase
+            .from('profiles')
+            .select('user_id, full_name, company')
+            .in('user_id', userIds);
+
+          if (!profilesError && profilesData) {
+            const clientsWithData: Client[] = profilesData.map(profile => ({
+              user_id: profile.user_id,
+              full_name: profile.full_name || 'Nome não informado',
+              company: profile.company || 'Empresa não informada',
+              email: 'email@exemplo.com', // Será atualizado quando tivermos Edge Function
+              progress: progressByUser.get(profile.user_id) || []
+            }));
+            setClients(clientsWithData);
+          }
+        } else {
+          setClients([]);
+        }
+      }
+    } catch (error) {
+      console.error('Erro ao buscar dados:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível carregar os dados de implementação",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchAvailableUsers = async () => {
+    try {
+      setLoadingUsers(true);
+      
+      // Buscar todos os usuários com role 'user' (clientes)
+      const { data: userRolesData, error: rolesError } = await supabase
+        .from('user_roles')
+        .select('user_id, role')
+        .eq('role', 'user');
+
+      if (rolesError) {
+        console.error('Erro ao buscar roles:', rolesError);
+        setAvailableUsers([]);
+        return;
+      }
+
+      if (userRolesData && userRolesData.length > 0) {
+        const userIds = userRolesData.map(r => r.user_id);
+        
+        // Buscar perfis dos usuários
+        const { data: profilesData, error: profilesError } = await supabase
+          .from('profiles')
+          .select('user_id, full_name, company')
+          .in('user_id', userIds);
+
+        if (!profilesError && profilesData) {
+          // Filtrar usuários que ainda não têm implementação
+          const existingUserIds = new Set(clients.map(c => c.user_id));
+          const availableUsersData = profilesData
+            .filter(profile => !existingUserIds.has(profile.user_id))
+            .map(profile => ({
+              user_id: profile.user_id,
+              full_name: profile.full_name || 'Nome não informado',
+              company: profile.company || 'Empresa não informada',
+              email: 'email@exemplo.com'
+            }));
+          
+          setAvailableUsers(availableUsersData);
+        }
+      } else {
+        setAvailableUsers([]);
+      }
+    } catch (error) {
+      console.error('Erro ao buscar usuários disponíveis:', error);
+      setAvailableUsers([]);
+    } finally {
+      setLoadingUsers(false);
+    }
+  };
+
+  const addClientImplementation = async () => {
+    if (!selectedUserId) {
+      toast({
+        title: "Erro",
+        description: "Selecione um usuário para adicionar",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      // Criar progresso de implementação para todas as etapas
+      const progressEntries = steps.map(step => ({
+        user_id: selectedUserId,
+        step_id: step.id,
+        status: 'pending' as const
+      }));
+
+      const { error } = await supabase
+        .from('user_implementation_progress')
+        .insert(progressEntries);
+
+      if (error) throw error;
+
+      toast({
+        title: "Sucesso",
+        description: "Implementação iniciada para o cliente selecionado"
+      });
+
+      setShowAddClientDialog(false);
+      setSelectedUserId('');
+      
+      // Recarregar dados
+      await fetchData();
+      await fetchAvailableUsers();
+    } catch (error) {
+      console.error('Erro ao criar implementação:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível criar a implementação",
+        variant: "destructive"
+      });
+    }
+  };
+
   const updateProgress = async (progressId: string, data: Partial<UserProgress>) => {
     try {
-      // Simular atualização
-      setClients(prevClients => 
-        prevClients.map(client => ({
-          ...client,
-          progress: client.progress.map(progress => 
-            progress.id === progressId 
-              ? { ...progress, ...data }
-              : progress
-          )
-        }))
-      );
+      const { error } = await supabase
+        .from('user_implementation_progress')
+        .update(data)
+        .eq('id', progressId);
+
+      if (error) throw error;
 
       toast({
         title: "Progresso Atualizado",
         description: "O status da implementação foi atualizado com sucesso",
       });
+
+      // Recarregar dados
+      fetchData();
     } catch (error) {
       console.error('Erro ao atualizar progresso:', error);
       toast({
@@ -232,6 +335,17 @@ const AdminImplementation = () => {
     );
   }
 
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-4 text-muted-foreground">Carregando implementações...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6 p-6">
       {/* Header */}
@@ -249,64 +363,130 @@ const AdminImplementation = () => {
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <Users className="h-4 w-4" />
-          <span>{clients.length} clientes</span>
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Users className="h-4 w-4" />
+            <span>{clients.length} clientes</span>
+          </div>
+          <Button
+            onClick={() => setShowAddClientDialog(true)}
+            className="bg-primary hover:bg-primary/90"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Adicionar Cliente
+          </Button>
         </div>
       </div>
 
       {/* Lista de Clientes */}
-      <div className="grid gap-6">
-        {clients.map((client) => (
-          <Card key={client.user_id} className="card-glass">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="text-xl">{client.full_name}</CardTitle>
-                  <CardDescription>{client.company}</CardDescription>
-                  <p className="text-sm text-muted-foreground mt-1">{client.email}</p>
-                </div>
-                <div className="text-right">
-                  <div className="text-2xl font-bold text-primary">
-                    {getProgressPercentage(client)}%
+      {clients.length === 0 ? (
+        <Card className="card-glass">
+          <CardContent className="p-8">
+            <div className="text-center space-y-4">
+              <div className="text-6xl">👥</div>
+              <h3 className="text-xl font-semibold">Nenhuma implementação encontrada</h3>
+              <p className="text-muted-foreground">
+                Não há clientes com implementação em andamento. 
+                Clique em "Adicionar Cliente" para iniciar uma nova implementação.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="grid gap-6">
+          {clients.map((client) => (
+            <Card key={client.user_id} className="card-glass">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="text-xl">{client.full_name}</CardTitle>
+                    <CardDescription>{client.company}</CardDescription>
+                    <p className="text-sm text-muted-foreground mt-1">{client.email}</p>
                   </div>
-                  <div className="text-sm text-muted-foreground">Progresso Geral</div>
+                  <div className="text-right">
+                    <div className="text-2xl font-bold text-primary">
+                      {getProgressPercentage(client)}%
+                    </div>
+                    <div className="text-sm text-muted-foreground">Progresso Geral</div>
+                  </div>
                 </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {steps.map((step) => {
-                  const progress = client.progress.find(p => p.step_id === step.id);
-                  const status = progress?.status || 'pending';
-                  
-                  return (
-                    <div key={step.id} className="flex items-center justify-between p-3 rounded-lg border border-border/50">
-                      <div className="flex items-center gap-3">
-                        {getStatusIcon(status)}
-                        <div>
-                          <h4 className="font-medium">{step.title}</h4>
-                          <p className="text-sm text-muted-foreground">{step.description}</p>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {steps.map((step) => {
+                    const progress = client.progress.find(p => p.step_id === step.id);
+                    const status = progress?.status || 'pending';
+                    
+                    return (
+                      <div key={step.id} className="flex items-center justify-between p-3 rounded-lg border border-border/50">
+                        <div className="flex items-center gap-3">
+                          {getStatusIcon(status)}
+                          <div>
+                            <h4 className="font-medium">{step.title}</h4>
+                            <p className="text-sm text-muted-foreground">{step.description}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          {getStatusBadge(status)}
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setEditingProgress(progress || { id: 'new', user_id: client.user_id, step_id: step.id, status: 'pending', step } as UserProgress)}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
                         </div>
                       </div>
-                      <div className="flex items-center gap-3">
-                        {getStatusBadge(status)}
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setEditingProgress(progress || { id: 'new', user_id: client.user_id, step_id: step.id, status: 'pending', step } as UserProgress)}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      {/* Dialog para adicionar cliente */}
+      <Dialog open={showAddClientDialog} onOpenChange={setShowAddClientDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Adicionar Cliente à Implementação</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label>Selecionar Cliente</Label>
+              <Select value={selectedUserId} onValueChange={setSelectedUserId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Escolha um cliente..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableUsers.map((user) => (
+                    <SelectItem key={user.user_id} value={user.user_id}>
+                      {user.full_name} - {user.company}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            {availableUsers.length === 0 && !loadingUsers && (
+              <p className="text-sm text-muted-foreground">
+                Todos os clientes já possuem implementação em andamento.
+              </p>
+            )}
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setShowAddClientDialog(false)}>
+                Cancelar
+              </Button>
+              <Button 
+                onClick={addClientImplementation}
+                disabled={!selectedUserId || availableUsers.length === 0}
+              >
+                Adicionar Implementação
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Dialog para editar progresso */}
       <Dialog open={!!editingProgress} onOpenChange={() => setEditingProgress(null)}>
