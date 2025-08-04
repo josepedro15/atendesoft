@@ -184,110 +184,43 @@ const AdminImplementation = () => {
   const fetchAvailableUsers = async () => {
     try {
       setLoadingUsers(true);
-      console.log('🔍 === INICIANDO BUSCA DIRETA DO BANCO ===');
       
-      // 1. Verificar se estamos autenticados
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        console.error('❌ Usuário não autenticado');
-        setAvailableUsers([]);
-        return;
-      }
-      console.log('✅ Usuário autenticado:', session.user.email);
-      
-      // 2. Buscar perfis primeiro
-      console.log('📋 Buscando perfis...');
+      // Buscar perfis e roles em uma única consulta
       const { data: profilesData, error: profilesError } = await supabase
         .from('profiles')
-        .select('user_id, full_name, company');
+        .select(`
+          user_id,
+          full_name,
+          company,
+          user_roles!inner(role)
+        `)
+        .eq('user_roles.role', 'user');
 
       if (profilesError) {
-        console.error('❌ Erro ao buscar perfis:', profilesError);
+        console.error('Erro ao buscar clientes:', profilesError);
         setAvailableUsers([]);
         return;
       }
-
-      console.log('📋 Perfis encontrados:', profilesData?.length || 0);
-      console.log('👤 Perfis:', profilesData);
 
       if (!profilesData || profilesData.length === 0) {
-        console.log('⚠️ Nenhum perfil encontrado no banco');
         setAvailableUsers([]);
         return;
       }
 
-      // 3. Buscar roles para filtrar apenas clientes
-      console.log('🆔 Buscando roles de usuário...');
-      const { data: rolesData, error: rolesError } = await supabase
-        .from('user_roles')
-        .select('user_id, role')
-        .eq('role', 'user');
-
-      if (rolesError) {
-        console.error('❌ Erro ao buscar roles:', rolesError);
-        setAvailableUsers([]);
-        return;
-      }
-
-      console.log('👥 Roles de usuário encontradas:', rolesData?.length || 0);
-      console.log('🆔 Roles:', rolesData);
-
-      if (!rolesData || rolesData.length === 0) {
-        console.log('⚠️ Nenhum usuário com role "user" encontrado');
-        setAvailableUsers([]);
-        return;
-      }
-
-      // 4. Criar mapa de roles para filtro rápido
-      const userRolesMap = new Map(rolesData.map(r => [r.user_id, r.role]));
-      console.log('🗺️ Mapa de roles criado:', Array.from(userRolesMap.entries()));
-      
-      // 5. Filtrar perfis que são clientes (role 'user')
-      const clientsOnly = profilesData.filter(profile => userRolesMap.has(profile.user_id));
-      console.log('👥 Clientes encontrados:', clientsOnly.length);
-      console.log('👤 Clientes:', clientsOnly);
-
-      if (clientsOnly.length === 0) {
-        console.log('⚠️ Nenhum cliente encontrado após filtro');
-        setAvailableUsers([]);
-        return;
-      }
-
-      // 6. Verificar implementações existentes
-      console.log('🔍 Verificando implementações existentes...');
-      console.log('📊 Clientes com implementação atual:', clients.length);
-      
-      if (clients.length === 0) {
-        console.log('✅ Não há implementações, todos os clientes estão disponíveis');
-        const availableUsersData = clientsOnly.map(client => ({
+      // Filtrar clientes que já têm implementação
+      const existingUserIds = new Set(clients.map(c => c.user_id));
+      const availableUsersData = profilesData
+        .filter(client => !existingUserIds.has(client.user_id))
+        .map(client => ({
           user_id: client.user_id,
           full_name: client.full_name || 'Nome não informado',
           company: client.company || 'Empresa não informada',
           email: 'email@exemplo.com'
         }));
-        setAvailableUsers(availableUsersData);
-        console.log('📝 Clientes disponíveis:', availableUsersData);
-      } else {
-        console.log('🔍 Filtrando clientes que já têm implementação...');
-        const existingUserIds = new Set(clients.map(c => c.user_id));
-        console.log('🚫 IDs com implementação existente:', Array.from(existingUserIds));
-        
-        const availableUsersData = clientsOnly
-          .filter(client => !existingUserIds.has(client.user_id))
-          .map(client => ({
-            user_id: client.user_id,
-            full_name: client.full_name || 'Nome não informado',
-            company: client.company || 'Empresa não informada',
-            email: 'email@exemplo.com'
-          }));
-        
-        setAvailableUsers(availableUsersData);
-        console.log('📝 Clientes disponíveis após filtro:', availableUsersData);
-      }
-      
-      console.log('✅ === BUSCA CONCLUÍDA ===');
+
+      setAvailableUsers(availableUsersData);
     } catch (error) {
-      console.error('❌ Erro ao buscar usuários disponíveis:', error);
+      console.error('Erro ao buscar usuários disponíveis:', error);
       setAvailableUsers([]);
     } finally {
       setLoadingUsers(false);
@@ -582,125 +515,6 @@ const AdminImplementation = () => {
                 <p className="text-xs text-muted-foreground">
                   Adicione clientes através do sistema de cadastro primeiro.
                 </p>
-                <Button
-                  onClick={() => {
-                    console.log('🔄 Testando busca de usuários...');
-                    console.log('📊 Estado atual - availableUsers:', availableUsers);
-                    console.log('📊 Estado atual - loadingUsers:', loadingUsers);
-                    fetchAvailableUsers();
-                  }}
-                  variant="outline"
-                  size="sm"
-                >
-                  Testar Busca de Usuários
-                </Button>
-                <Button
-                  onClick={async () => {
-                    console.log('🔍 Verificando tabela profiles...');
-                    const { data, error } = await supabase
-                      .from('profiles')
-                      .select('*');
-                    console.log('📋 Profiles data:', data);
-                    console.log('❌ Profiles error:', error);
-                  }}
-                  variant="outline"
-                  size="sm"
-                >
-                  Verificar Profiles
-                </Button>
-                <Button
-                  onClick={async () => {
-                    console.log('🔍 Verificando tabela user_roles...');
-                    const { data, error } = await supabase
-                      .from('user_roles')
-                      .select('*');
-                    console.log('📋 User Roles data:', data);
-                    console.log('❌ User Roles error:', error);
-                  }}
-                  variant="outline"
-                  size="sm"
-                >
-                  Verificar User Roles
-                </Button>
-                <Button
-                  onClick={async () => {
-                    console.log('🔍 === VERIFICAÇÃO COMPLETA DO BANCO ===');
-                    
-                    // 1. Verificar profiles
-                    console.log('📋 1. Verificando profiles...');
-                    const { data: profilesData, error: profilesError } = await supabase
-                      .from('profiles')
-                      .select('*');
-                    console.log('📊 Profiles encontrados:', profilesData?.length || 0);
-                    console.log('📋 Profiles:', profilesData);
-                    console.log('❌ Profiles error:', profilesError);
-                    
-                    // 2. Verificar user_roles
-                    console.log('🆔 2. Verificando user_roles...');
-                    const { data: rolesData, error: rolesError } = await supabase
-                      .from('user_roles')
-                      .select('*');
-                    console.log('📊 Roles encontradas:', rolesData?.length || 0);
-                    console.log('🆔 Roles:', rolesData);
-                    console.log('❌ Roles error:', rolesError);
-                    
-                    // 3. Verificar auth.users (se possível)
-                    console.log('👤 3. Verificando auth.users...');
-                    const { data: { users }, error: authError } = await supabase.auth.admin.listUsers();
-                    console.log('📊 Usuários auth encontrados:', users?.length || 0);
-                    console.log('👤 Users:', users);
-                    console.log('❌ Auth error:', authError);
-                    
-                    console.log('✅ === VERIFICAÇÃO CONCLUÍDA ===');
-                  }}
-                  variant="outline"
-                  size="sm"
-                >
-                  Verificação Completa
-                </Button>
-                <Button
-                  onClick={async () => {
-                    console.log('🔍 === TESTE DE CADASTRO DE USUÁRIO ===');
-                    
-                    // Simular criação de um usuário de teste
-                    const testUser = {
-                      email: 'teste@exemplo.com',
-                      full_name: 'Usuário Teste',
-                      company: 'Empresa Teste',
-                      phone: '(11) 99999-9999',
-                      role: 'user'
-                    };
-                    
-                    console.log('📝 Tentando criar usuário de teste:', testUser);
-                    
-                    try {
-                      const session = await supabase.auth.getSession();
-                      if (!session.data.session?.access_token) {
-                        console.error('❌ Não autenticado');
-                        return;
-                      }
-                      
-                      const { data, error } = await supabase.functions.invoke('create-user', {
-                        body: testUser,
-                        headers: {
-                          'Authorization': `Bearer ${session.data.session.access_token}`
-                        }
-                      });
-                      
-                      if (error) {
-                        console.error('❌ Erro ao criar usuário:', error);
-                      } else {
-                        console.log('✅ Usuário criado com sucesso:', data);
-                      }
-                    } catch (error) {
-                      console.error('❌ Erro na criação:', error);
-                    }
-                  }}
-                  variant="outline"
-                  size="sm"
-                >
-                  Testar Criação de Usuário
-                </Button>
               </div>
             )}
             {availableUsers.length > 0 && (
