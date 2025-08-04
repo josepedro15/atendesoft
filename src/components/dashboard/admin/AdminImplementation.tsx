@@ -224,7 +224,19 @@ const AdminImplementation = () => {
   const fetchAvailableUsers = async () => {
     try {
       setLoadingUsers(true);
-      console.log('🔍 Buscando usuários disponíveis...');
+      console.log('🔍 Buscando usuários reais do banco...');
+      
+      // Primeiro, verificar todos os usuários no sistema
+      const { data: allUsersData, error: allUsersError } = await supabase
+        .from('profiles')
+        .select('user_id, full_name, company');
+
+      if (allUsersError) {
+        console.error('❌ Erro ao buscar todos os usuários:', allUsersError);
+      } else {
+        console.log('📋 Total de usuários no sistema:', allUsersData?.length || 0);
+        console.log('👥 Todos os usuários:', allUsersData);
+      }
       
       // Buscar todos os usuários com role 'user' (clientes)
       const { data: userRolesData, error: rolesError } = await supabase
@@ -238,11 +250,12 @@ const AdminImplementation = () => {
         return;
       }
 
-      console.log('👥 Usuários com role "user":', userRolesData?.length || 0);
+      console.log('👥 Usuários com role "user" encontrados:', userRolesData?.length || 0);
+      console.log('🆔 Roles encontradas:', userRolesData);
 
       if (userRolesData && userRolesData.length > 0) {
         const userIds = userRolesData.map(r => r.user_id);
-        console.log('🆔 IDs dos usuários:', userIds);
+        console.log('🆔 IDs dos usuários com role "user":', userIds);
         
         // Buscar perfis dos usuários
         const { data: profilesData, error: profilesError } = await supabase
@@ -252,8 +265,8 @@ const AdminImplementation = () => {
 
         if (!profilesError && profilesData) {
           console.log('📋 Perfis encontrados:', profilesData.length);
-          console.log('👤 Perfis:', profilesData);
-          console.log('📊 Clientes atuais:', clients.length);
+          console.log('👤 Perfis reais:', profilesData);
+          console.log('📊 Clientes atuais com implementação:', clients.length);
           
           // Se não há clientes com implementação, todos os usuários estão disponíveis
           if (clients.length === 0) {
@@ -288,7 +301,8 @@ const AdminImplementation = () => {
           setAvailableUsers([]);
         }
       } else {
-        console.log('⚠️ Nenhum usuário com role "user" encontrado');
+        console.log('⚠️ Nenhum usuário com role "user" encontrado no banco');
+        console.log('💡 Adicione usuários reais através do sistema de cadastro');
         setAvailableUsers([]);
       }
     } catch (error) {
@@ -539,7 +553,14 @@ const AdminImplementation = () => {
       )}
 
       {/* Dialog para adicionar cliente */}
-      <Dialog open={showAddClientDialog} onOpenChange={setShowAddClientDialog}>
+      <Dialog open={showAddClientDialog} onOpenChange={(open) => {
+        setShowAddClientDialog(open);
+        if (open) {
+          // Quando o modal abre, buscar usuários disponíveis
+          console.log('🔄 Modal aberto, buscando usuários disponíveis...');
+          fetchAvailableUsers();
+        }
+      }}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Adicionar Cliente à Implementação</DialogTitle>
@@ -547,31 +568,39 @@ const AdminImplementation = () => {
           <div className="space-y-4">
             <div>
               <Label>Selecionar Cliente</Label>
-              <Select value={selectedUserId} onValueChange={setSelectedUserId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Escolha um cliente..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {availableUsers.map((user) => (
-                    <SelectItem key={user.user_id} value={user.user_id}>
-                      {user.full_name} - {user.company}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              {loadingUsers ? (
+                <div className="flex items-center space-x-2 p-3 border rounded-md">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+                  <span className="text-sm text-muted-foreground">Carregando clientes...</span>
+                </div>
+              ) : (
+                <Select value={selectedUserId} onValueChange={setSelectedUserId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Escolha um cliente..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableUsers.map((user) => (
+                      <SelectItem key={user.user_id} value={user.user_id}>
+                        {user.full_name} - {user.company}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
             </div>
             {availableUsers.length === 0 && !loadingUsers && (
               <div className="space-y-2">
                 <p className="text-sm text-muted-foreground">
-                  Todos os clientes já possuem implementação em andamento.
+                  Nenhum cliente disponível para implementação.
                 </p>
-                <Button
-                  onClick={createTestData}
-                  variant="outline"
-                  size="sm"
-                >
-                  Criar Dados de Teste
-                </Button>
+                <p className="text-xs text-muted-foreground">
+                  Adicione clientes através do sistema de cadastro primeiro.
+                </p>
+              </div>
+            )}
+            {availableUsers.length > 0 && (
+              <div className="text-sm text-muted-foreground">
+                {availableUsers.length} cliente(s) disponível(is) para implementação.
               </div>
             )}
             <div className="flex justify-end gap-2">
@@ -580,7 +609,7 @@ const AdminImplementation = () => {
               </Button>
               <Button 
                 onClick={addClientImplementation}
-                disabled={!selectedUserId || availableUsers.length === 0}
+                disabled={!selectedUserId || availableUsers.length === 0 || loadingUsers}
               >
                 Adicionar Implementação
               </Button>
