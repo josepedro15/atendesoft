@@ -184,127 +184,101 @@ const AdminImplementation = () => {
   const fetchAvailableUsers = async () => {
     try {
       setLoadingUsers(true);
-      console.log('🔄 Buscando todos os usuários do Auth...');
+      console.log('🔄 === TESTE COMPLETO DO SUPABASE ===');
       
-      // 1. Buscar todos os usuários do Auth (se possível)
-      const { data: { users }, error: authError } = await supabase.auth.admin.listUsers();
+      // TESTE 1: Verificar se o cliente Supabase está funcionando
+      console.log('📋 TESTE 1: Verificando cliente Supabase...');
+      console.log('🔗 URL:', supabase.supabaseUrl);
+      console.log('🔑 Anon Key:', supabase.supabaseKey ? 'Presente' : 'Ausente');
       
-      if (authError) {
-        console.log('❌ Não conseguiu acessar auth.users, tentando user_roles...');
-        
-        // Fallback: buscar em user_roles
-        const { data: userRolesData, error: userRolesError } = await supabase
-          .from('user_roles')
-          .select('user_id, role')
-          .eq('role', 'user');
-
-        if (userRolesError) {
-          console.error('Erro ao buscar user_roles:', userRolesError);
-          setAvailableUsers([]);
-          return;
-        }
-
-        console.log('📊 Usuários com role "user" encontrados:', userRolesData?.length || 0);
-        console.log('👥 User Roles:', userRolesData);
-
-        if (!userRolesData || userRolesData.length === 0) {
-          console.log('Nenhum usuário com role "user" encontrado');
-          setAvailableUsers([]);
-          return;
-        }
-
-        // Buscar perfis dos usuários encontrados
-        const userIds = userRolesData.map(ur => ur.user_id);
-        const { data: profilesData, error: profilesError } = await supabase
-          .from('profiles')
-          .select('user_id, full_name, company')
-          .in('user_id', userIds);
-
-        if (profilesError) {
-          console.error('Erro ao buscar profiles:', profilesError);
-          setAvailableUsers([]);
-          return;
-        }
-
-        console.log('📋 Perfis encontrados:', profilesData?.length || 0);
-        console.log('👤 Profiles:', profilesData);
-
-        // Criar lista de clientes disponíveis
-        const availableUsersData = profilesData?.map(profile => ({
-          user_id: profile.user_id,
-          full_name: profile.full_name || 'Nome não informado',
-          company: profile.company || 'Empresa não informada',
-          email: 'email@exemplo.com'
-        })) || [];
-
-        console.log('✅ Clientes disponíveis:', availableUsersData);
-        setAvailableUsers(availableUsersData);
-        return;
-      }
-
-      console.log('📊 Total de usuários no Auth:', users?.length || 0);
-      console.log('👤 Usuários Auth:', users);
-
-      if (!users || users.length === 0) {
-        console.log('Nenhum usuário encontrado no Auth');
-        setAvailableUsers([]);
-        return;
-      }
-
-      // 2. Buscar roles para filtrar apenas clientes
-      const { data: userRolesData, error: userRolesError } = await supabase
+      // TESTE 2: Verificar autenticação
+      console.log('🔐 TESTE 2: Verificando autenticação...');
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      console.log('✅ Sessão:', session ? 'Ativa' : 'Inativa');
+      console.log('👤 Usuário logado:', session?.user?.email);
+      console.log('❌ Erro sessão:', sessionError);
+      
+      // TESTE 3: Tentar acessar user_roles
+      console.log('🆔 TESTE 3: Tentando acessar user_roles...');
+      const { data: rolesData, error: rolesError } = await supabase
         .from('user_roles')
-        .select('user_id, role')
-        .eq('role', 'user');
-
-      if (userRolesError) {
-        console.error('Erro ao buscar user_roles:', userRolesError);
-        setAvailableUsers([]);
-        return;
-      }
-
-      console.log('🆔 Roles encontradas:', userRolesData?.length || 0);
-      console.log('👥 Roles:', userRolesData);
-
-      // 3. Filtrar usuários que têm role 'user'
-      const userRolesMap = new Map(userRolesData?.map(r => [r.user_id, r.role]) || []);
-      const clientsOnly = users.filter(user => userRolesMap.has(user.id));
-
-      console.log('👥 Clientes encontrados:', clientsOnly.length);
-      console.log('👤 Clientes:', clientsOnly);
-
-      // 4. Buscar perfis dos clientes
-      const clientIds = clientsOnly.map(c => c.id);
+        .select('*')
+        .limit(1);
+      
+      console.log('✅ Acesso user_roles:', rolesData ? 'OK' : 'ERRO');
+      console.log('📊 Dados user_roles:', rolesData);
+      console.log('❌ Erro user_roles:', rolesError);
+      
+      // TESTE 4: Tentar acessar profiles
+      console.log('👤 TESTE 4: Tentando acessar profiles...');
       const { data: profilesData, error: profilesError } = await supabase
         .from('profiles')
-        .select('user_id, full_name, company')
-        .in('user_id', clientIds);
-
-      if (profilesError) {
-        console.error('Erro ao buscar profiles:', profilesError);
+        .select('*')
+        .limit(1);
+      
+      console.log('✅ Acesso profiles:', profilesData ? 'OK' : 'ERRO');
+      console.log('📊 Dados profiles:', profilesData);
+      console.log('❌ Erro profiles:', profilesError);
+      
+      // TESTE 5: Tentar acessar auth.users (pode dar erro de permissão)
+      console.log('🔐 TESTE 5: Tentando acessar auth.users...');
+      try {
+        const { data: { users }, error: authError } = await supabase.auth.admin.listUsers();
+        console.log('✅ Acesso auth.users:', users ? 'OK' : 'ERRO');
+        console.log('📊 Total auth.users:', users?.length || 0);
+        console.log('❌ Erro auth.users:', authError);
+      } catch (authCatchError) {
+        console.log('❌ Erro ao tentar auth.users:', authCatchError);
       }
-
-      console.log('📋 Perfis encontrados:', profilesData?.length || 0);
-      console.log('👤 Profiles:', profilesData);
-
-      // 5. Criar mapa de perfis
-      const profilesMap = new Map(profilesData?.map(p => [p.user_id, p]) || []);
-
-      // 6. Criar lista final de clientes
-      const availableUsersData = clientsOnly.map(user => {
-        const profile = profilesMap.get(user.id);
-        return {
-          user_id: user.id,
-          full_name: profile?.full_name || user.user_metadata?.full_name || user.email?.split('@')[0] || 'Nome não informado',
-          company: profile?.company || 'Empresa não informada',
-          email: user.email || 'email@exemplo.com'
-        };
-      });
-
-      console.log('✅ Clientes disponíveis:', availableUsersData);
-      setAvailableUsers(availableUsersData);
+      
+      // TESTE 6: Buscar user_roles com role = 'user'
+      console.log('👥 TESTE 6: Buscando user_roles com role = "user"...');
+      const { data: userRoles, error: userRolesError } = await supabase
+        .from('user_roles')
+        .select('*')
+        .eq('role', 'user');
+      
+      console.log('📊 User roles com role "user":', userRoles?.length || 0);
+      console.log('👥 User roles:', userRoles);
+      console.log('❌ Erro user roles:', userRolesError);
+      
+      // TESTE 7: Se encontrou user_roles, buscar perfis
+      if (userRoles && userRoles.length > 0) {
+        console.log('📋 TESTE 7: Buscando perfis dos usuários...');
+        const userIds = userRoles.map(ur => ur.user_id);
+        const { data: userProfiles, error: userProfilesError } = await supabase
+          .from('profiles')
+          .select('*')
+          .in('user_id', userIds);
+        
+        console.log('📊 Perfis encontrados:', userProfiles?.length || 0);
+        console.log('👤 Perfis:', userProfiles);
+        console.log('❌ Erro perfis:', userProfilesError);
+        
+        // TESTE 8: Criar lista final
+        if (userProfiles && userProfiles.length > 0) {
+          console.log('📝 TESTE 8: Criando lista de clientes...');
+          const availableUsersData = userProfiles.map(profile => ({
+            user_id: profile.user_id,
+            full_name: profile.full_name || 'Nome não informado',
+            company: profile.company || 'Empresa não informada',
+            email: 'email@exemplo.com'
+          }));
+          
+          console.log('✅ Clientes disponíveis:', availableUsersData);
+          setAvailableUsers(availableUsersData);
+        } else {
+          console.log('⚠️ Nenhum perfil encontrado');
+          setAvailableUsers([]);
+        }
+      } else {
+        console.log('⚠️ Nenhum usuário com role "user" encontrado');
+        setAvailableUsers([]);
+      }
+      
+      console.log('✅ === TESTE CONCLUÍDO ===');
     } catch (error) {
-      console.error('Erro ao buscar usuários:', error);
+      console.error('❌ Erro geral:', error);
       setAvailableUsers([]);
     } finally {
       setLoadingUsers(false);
@@ -363,20 +337,34 @@ const AdminImplementation = () => {
 
   const updateProgress = async (progressId: string, data: Partial<UserProgress>) => {
     try {
-      const { error } = await supabase
+      console.log('🔄 === ATUALIZANDO PROGRESSO ===');
+      console.log('📝 Progress ID:', progressId);
+      console.log('📊 Dados para atualizar:', data);
+      
+      const { data: updateResult, error } = await supabase
         .from('user_implementation_progress')
         .update(data)
-        .eq('id', progressId);
+        .eq('id', progressId)
+        .select();
 
-      if (error) throw error;
+      console.log('✅ Resultado da atualização:', updateResult);
+      console.log('❌ Erro da atualização:', error);
 
+      if (error) {
+        console.error('❌ Erro ao atualizar:', error);
+        throw error;
+      }
+
+      console.log('✅ Atualização bem-sucedida!');
       toast({
         title: "Progresso Atualizado",
         description: "O status da implementação foi atualizado com sucesso",
       });
 
       // Recarregar dados
-      fetchData();
+      console.log('🔄 Recarregando dados...');
+      await fetchData();
+      console.log('✅ Dados recarregados!');
     } catch (error) {
       console.error('❌ Erro ao atualizar progresso:', error);
       toast({
