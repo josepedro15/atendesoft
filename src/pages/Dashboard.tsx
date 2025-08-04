@@ -12,6 +12,7 @@ import AdminImplementation from "@/components/dashboard/admin/AdminImplementatio
 import AdminContracts from "@/components/dashboard/admin/AdminContracts";
 import AdminPayments from "@/components/dashboard/admin/AdminPayments";
 import AdminServices from "@/components/dashboard/admin/AdminServices";
+import AdminDashboard from "@/components/dashboard/admin/AdminDashboard";
 
 const Dashboard = () => {
   const { isAdmin } = useAuth();
@@ -27,24 +28,7 @@ const Dashboard = () => {
           <Routes>
             <Route path="/" element={
               isAdmin ? (
-                // Admin Dashboard
-                <div className="space-y-6">
-                  <div>
-                    <h1 className="text-3xl font-bold text-glow text-primary mb-2">
-                      Dashboard Administrativo
-                    </h1>
-                    <p className="text-muted-foreground">
-                      Painel de controle para administradores
-                    </p>
-                  </div>
-                  
-                  {/* Aqui iremos adicionar as estatísticas do admin */}
-                  <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-                    <div className="text-center text-muted-foreground py-8">
-                      Estatísticas administrativas em desenvolvimento...
-                    </div>
-                  </div>
-                </div>
+                <AdminDashboard />
               ) : (
                 // Client Dashboard
                 <div className="space-y-8">
