@@ -184,41 +184,93 @@ const AdminImplementation = () => {
   const fetchAvailableUsers = async () => {
     try {
       setLoadingUsers(true);
+      console.log('🔄 Buscando clientes em user_roles...');
       
-      // Buscar perfis e roles em uma única consulta
+      // 1. Buscar todos os usuários com role 'user' em user_roles
+      const { data: userRolesData, error: userRolesError } = await supabase
+        .from('user_roles')
+        .select('user_id, role')
+        .eq('role', 'user');
+
+      if (userRolesError) {
+        console.error('Erro ao buscar user_roles:', userRolesError);
+        setAvailableUsers([]);
+        return;
+      }
+
+      console.log('👥 Usuários com role "user" encontrados:', userRolesData?.length || 0);
+      console.log('🆔 User Roles:', userRolesData);
+
+      if (!userRolesData || userRolesData.length === 0) {
+        console.log('Nenhum usuário com role "user" encontrado');
+        setAvailableUsers([]);
+        return;
+      }
+
+      // 2. Buscar perfis dos usuários encontrados
+      const userIds = userRolesData.map(ur => ur.user_id);
       const { data: profilesData, error: profilesError } = await supabase
         .from('profiles')
-        .select(`
-          user_id,
-          full_name,
-          company,
-          user_roles!inner(role)
-        `)
-        .eq('user_roles.role', 'user');
+        .select('user_id, full_name, company')
+        .in('user_id', userIds);
 
       if (profilesError) {
-        console.error('Erro ao buscar clientes:', profilesError);
+        console.error('Erro ao buscar perfis:', profilesError);
         setAvailableUsers([]);
         return;
       }
 
-      if (!profilesData || profilesData.length === 0) {
-        setAvailableUsers([]);
-        return;
+      console.log('📋 Perfis encontrados:', profilesData?.length || 0);
+      console.log('👤 Perfis:', profilesData);
+
+      // 3. Criar mapa de perfis para facilitar o acesso
+      const profilesMap = new Map(profilesData?.map(p => [p.user_id, p]) || []);
+
+      // 4. Verificar quais usuários já têm implementação em user_implementation_progress
+      const { data: progressData, error: progressError } = await supabase
+        .from('user_implementation_progress')
+        .select('user_id')
+        .limit(1); // Só precisamos saber se existe algum registro
+
+      if (progressError) {
+        console.error('Erro ao verificar progresso:', progressError);
       }
 
-      // Filtrar clientes que já têm implementação
-      const existingUserIds = new Set(clients.map(c => c.user_id));
-      const availableUsersData = profilesData
-        .filter(client => !existingUserIds.has(client.user_id))
-        .map(client => ({
-          user_id: client.user_id,
-          full_name: client.full_name || 'Nome não informado',
-          company: client.company || 'Empresa não informada',
-          email: 'email@exemplo.com'
-        }));
+      console.log('📊 Usuários com implementação:', progressData?.length || 0);
 
-      setAvailableUsers(availableUsersData);
+      // 5. Se não há implementações, todos os clientes estão disponíveis
+      if (!progressData || progressData.length === 0) {
+        console.log('✅ Nenhuma implementação existente, todos os clientes estão disponíveis');
+        const availableUsersData = userRolesData.map(userRole => {
+          const profile = profilesMap.get(userRole.user_id);
+          return {
+            user_id: userRole.user_id,
+            full_name: profile?.full_name || 'Nome não informado',
+            company: profile?.company || 'Empresa não informada',
+            email: 'email@exemplo.com'
+          };
+        });
+        
+        console.log('📝 Clientes disponíveis:', availableUsersData);
+        setAvailableUsers(availableUsersData);
+      } else {
+        // 6. Se há implementações, filtrar usuários que já têm progresso
+        const usersWithProgress = new Set(progressData.map(p => p.user_id));
+        const availableUsersData = userRolesData
+          .filter(userRole => !usersWithProgress.has(userRole.user_id))
+          .map(userRole => {
+            const profile = profilesMap.get(userRole.user_id);
+            return {
+              user_id: userRole.user_id,
+              full_name: profile?.full_name || 'Nome não informado',
+              company: profile?.company || 'Empresa não informada',
+              email: 'email@exemplo.com'
+            };
+          });
+        
+        console.log('📝 Clientes disponíveis após filtro:', availableUsersData);
+        setAvailableUsers(availableUsersData);
+      }
     } catch (error) {
       console.error('Erro ao buscar usuários disponíveis:', error);
       setAvailableUsers([]);
@@ -515,6 +567,16 @@ const AdminImplementation = () => {
                 <p className="text-xs text-muted-foreground">
                   Adicione clientes através do sistema de cadastro primeiro.
                 </p>
+                <Button
+                  onClick={() => {
+                    console.log('🔄 Testando busca manual...');
+                    fetchAvailableUsers();
+                  }}
+                  variant="outline"
+                  size="sm"
+                >
+                  Testar Busca
+                </Button>
               </div>
             )}
             {availableUsers.length > 0 && (
