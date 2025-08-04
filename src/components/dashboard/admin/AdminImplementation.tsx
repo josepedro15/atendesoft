@@ -99,9 +99,54 @@ const AdminImplementation = () => {
     }
   }, [isAdmin, isInitialized, dataFetched]);
 
+  const createTestData = async () => {
+    try {
+      console.log('🔄 Criando dados de teste...');
+      
+      // Criar etapas de implementação se não existirem
+      for (const step of defaultSteps) {
+        await supabase
+          .from('implementation_steps')
+          .upsert(step, { onConflict: 'id' });
+      }
+
+      // Criar alguns usuários de teste se não existirem
+      const testUsers = [
+        { user_id: 'test-user-1', full_name: 'João Silva', company: 'Empresa ABC Ltda' },
+        { user_id: 'test-user-2', full_name: 'Maria Santos', company: 'Tech Solutions' },
+        { user_id: 'test-user-3', full_name: 'Pedro Costa', company: 'Digital Marketing Pro' }
+      ];
+
+      for (const user of testUsers) {
+        // Criar perfil
+        await supabase
+          .from('profiles')
+          .upsert(user, { onConflict: 'user_id' });
+        
+        // Criar role de usuário
+        await supabase
+          .from('user_roles')
+          .upsert({ user_id: user.user_id, role: 'user' }, { onConflict: 'user_id' });
+      }
+
+      console.log('✅ Dados de teste criados com sucesso');
+      toast({
+        title: "Dados de Teste Criados",
+        description: "Foram criados 3 clientes de teste para demonstração"
+      });
+
+      // Recarregar dados
+      await fetchData();
+      await fetchAvailableUsers();
+    } catch (error) {
+      console.error('❌ Erro ao criar dados de teste:', error);
+    }
+  };
+
   const fetchData = async () => {
     try {
       setLoading(true);
+      console.log('🔄 Buscando dados de implementação...');
       
       // Buscar etapas de implementação do banco
       const { data: stepsData, error: stepsError } = await supabase
@@ -110,10 +155,11 @@ const AdminImplementation = () => {
         .order('step_number');
 
       if (stepsError) {
-        console.error('Erro ao buscar etapas:', stepsError);
+        console.error('❌ Erro ao buscar etapas:', stepsError);
         // Usar etapas padrão se não houver no banco
         setSteps(defaultSteps);
       } else {
+        console.log('📋 Etapas encontradas:', stepsData?.length || 0);
         setSteps(stepsData || defaultSteps);
       }
 
@@ -126,9 +172,10 @@ const AdminImplementation = () => {
         `);
 
       if (progressError) {
-        console.error('Erro ao buscar progresso:', progressError);
+        console.error('❌ Erro ao buscar progresso:', progressError);
         setClients([]);
       } else {
+        console.log('📊 Progresso encontrado:', progressData?.length || 0);
         // Agrupar progresso por usuário
         const progressByUser = new Map<string, UserProgress[]>();
         (progressData || []).forEach((progress: any) => {
@@ -151,17 +198,19 @@ const AdminImplementation = () => {
               user_id: profile.user_id,
               full_name: profile.full_name || 'Nome não informado',
               company: profile.company || 'Empresa não informada',
-              email: 'email@exemplo.com', // Será atualizado quando tivermos Edge Function
+              email: 'email@exemplo.com',
               progress: progressByUser.get(profile.user_id) || []
             }));
             setClients(clientsWithData);
+            console.log('👥 Clientes com implementação:', clientsWithData.length);
           }
         } else {
           setClients([]);
+          console.log('⚠️ Nenhum cliente com implementação encontrado');
         }
       }
     } catch (error) {
-      console.error('Erro ao buscar dados:', error);
+      console.error('❌ Erro ao buscar dados:', error);
       toast({
         title: "Erro",
         description: "Não foi possível carregar os dados de implementação",
@@ -262,6 +311,8 @@ const AdminImplementation = () => {
     }
 
     try {
+      console.log('🔄 Criando implementação para usuário:', selectedUserId);
+      
       // Criar progresso de implementação para todas as etapas
       const progressEntries = steps.map(step => ({
         user_id: selectedUserId,
@@ -290,7 +341,7 @@ const AdminImplementation = () => {
         fetchAvailableUsers();
       }, 500);
     } catch (error) {
-      console.error('Erro ao criar implementação:', error);
+      console.error('❌ Erro ao criar implementação:', error);
       toast({
         title: "Erro",
         description: "Não foi possível criar a implementação",
@@ -316,7 +367,7 @@ const AdminImplementation = () => {
       // Recarregar dados
       fetchData();
     } catch (error) {
-      console.error('Erro ao atualizar progresso:', error);
+      console.error('❌ Erro ao atualizar progresso:', error);
       toast({
         title: "Erro",
         description: "Erro ao atualizar o progresso",
@@ -420,10 +471,16 @@ const AdminImplementation = () => {
             <div className="text-center space-y-4">
               <div className="text-6xl">👥</div>
               <h3 className="text-xl font-semibold">Nenhuma implementação encontrada</h3>
-              <p className="text-muted-foreground">
+              <p className="text-muted-foreground mb-6">
                 Não há clientes com implementação em andamento. 
                 Clique em "Adicionar Cliente" para iniciar uma nova implementação.
               </p>
+              <Button
+                onClick={createTestData}
+                className="bg-primary hover:bg-primary/90"
+              >
+                Criar Dados de Teste
+              </Button>
             </div>
           </CardContent>
         </Card>
@@ -504,9 +561,18 @@ const AdminImplementation = () => {
               </Select>
             </div>
             {availableUsers.length === 0 && !loadingUsers && (
-              <p className="text-sm text-muted-foreground">
-                Todos os clientes já possuem implementação em andamento.
-              </p>
+              <div className="space-y-2">
+                <p className="text-sm text-muted-foreground">
+                  Todos os clientes já possuem implementação em andamento.
+                </p>
+                <Button
+                  onClick={createTestData}
+                  variant="outline"
+                  size="sm"
+                >
+                  Criar Dados de Teste
+                </Button>
+              </div>
             )}
             <div className="flex justify-end gap-2">
               <Button variant="outline" onClick={() => setShowAddClientDialog(false)}>
