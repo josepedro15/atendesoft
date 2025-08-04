@@ -184,9 +184,74 @@ const AdminImplementation = () => {
   const fetchAvailableUsers = async () => {
     try {
       setLoadingUsers(true);
-      console.log('🔄 Buscando clientes na tabela user_roles...');
+      console.log('🔄 Buscando todos os usuários do Auth...');
       
-      // 1. Buscar usuários com role 'user' na tabela user_roles
+      // 1. Buscar todos os usuários do Auth (se possível)
+      const { data: { users }, error: authError } = await supabase.auth.admin.listUsers();
+      
+      if (authError) {
+        console.log('❌ Não conseguiu acessar auth.users, tentando user_roles...');
+        
+        // Fallback: buscar em user_roles
+        const { data: userRolesData, error: userRolesError } = await supabase
+          .from('user_roles')
+          .select('user_id, role')
+          .eq('role', 'user');
+
+        if (userRolesError) {
+          console.error('Erro ao buscar user_roles:', userRolesError);
+          setAvailableUsers([]);
+          return;
+        }
+
+        console.log('📊 Usuários com role "user" encontrados:', userRolesData?.length || 0);
+        console.log('👥 User Roles:', userRolesData);
+
+        if (!userRolesData || userRolesData.length === 0) {
+          console.log('Nenhum usuário com role "user" encontrado');
+          setAvailableUsers([]);
+          return;
+        }
+
+        // Buscar perfis dos usuários encontrados
+        const userIds = userRolesData.map(ur => ur.user_id);
+        const { data: profilesData, error: profilesError } = await supabase
+          .from('profiles')
+          .select('user_id, full_name, company')
+          .in('user_id', userIds);
+
+        if (profilesError) {
+          console.error('Erro ao buscar profiles:', profilesError);
+          setAvailableUsers([]);
+          return;
+        }
+
+        console.log('📋 Perfis encontrados:', profilesData?.length || 0);
+        console.log('👤 Profiles:', profilesData);
+
+        // Criar lista de clientes disponíveis
+        const availableUsersData = profilesData?.map(profile => ({
+          user_id: profile.user_id,
+          full_name: profile.full_name || 'Nome não informado',
+          company: profile.company || 'Empresa não informada',
+          email: 'email@exemplo.com'
+        })) || [];
+
+        console.log('✅ Clientes disponíveis:', availableUsersData);
+        setAvailableUsers(availableUsersData);
+        return;
+      }
+
+      console.log('📊 Total de usuários no Auth:', users?.length || 0);
+      console.log('👤 Usuários Auth:', users);
+
+      if (!users || users.length === 0) {
+        console.log('Nenhum usuário encontrado no Auth');
+        setAvailableUsers([]);
+        return;
+      }
+
+      // 2. Buscar roles para filtrar apenas clientes
       const { data: userRolesData, error: userRolesError } = await supabase
         .from('user_roles')
         .select('user_id, role')
@@ -198,38 +263,43 @@ const AdminImplementation = () => {
         return;
       }
 
-      console.log('📊 Usuários com role "user" encontrados:', userRolesData?.length || 0);
-      console.log('👥 User Roles:', userRolesData);
+      console.log('🆔 Roles encontradas:', userRolesData?.length || 0);
+      console.log('👥 Roles:', userRolesData);
 
-      if (!userRolesData || userRolesData.length === 0) {
-        console.log('Nenhum usuário com role "user" encontrado');
-        setAvailableUsers([]);
-        return;
-      }
+      // 3. Filtrar usuários que têm role 'user'
+      const userRolesMap = new Map(userRolesData?.map(r => [r.user_id, r.role]) || []);
+      const clientsOnly = users.filter(user => userRolesMap.has(user.id));
 
-      // 2. Buscar perfis dos usuários encontrados
-      const userIds = userRolesData.map(ur => ur.user_id);
+      console.log('👥 Clientes encontrados:', clientsOnly.length);
+      console.log('👤 Clientes:', clientsOnly);
+
+      // 4. Buscar perfis dos clientes
+      const clientIds = clientsOnly.map(c => c.id);
       const { data: profilesData, error: profilesError } = await supabase
         .from('profiles')
         .select('user_id, full_name, company')
-        .in('user_id', userIds);
+        .in('user_id', clientIds);
 
       if (profilesError) {
         console.error('Erro ao buscar profiles:', profilesError);
-        setAvailableUsers([]);
-        return;
       }
 
       console.log('📋 Perfis encontrados:', profilesData?.length || 0);
       console.log('👤 Profiles:', profilesData);
 
-      // 3. Criar lista de clientes disponíveis
-      const availableUsersData = profilesData?.map(profile => ({
-        user_id: profile.user_id,
-        full_name: profile.full_name || 'Nome não informado',
-        company: profile.company || 'Empresa não informada',
-        email: 'email@exemplo.com'
-      })) || [];
+      // 5. Criar mapa de perfis
+      const profilesMap = new Map(profilesData?.map(p => [p.user_id, p]) || []);
+
+      // 6. Criar lista final de clientes
+      const availableUsersData = clientsOnly.map(user => {
+        const profile = profilesMap.get(user.id);
+        return {
+          user_id: user.id,
+          full_name: profile?.full_name || user.user_metadata?.full_name || user.email?.split('@')[0] || 'Nome não informado',
+          company: profile?.company || 'Empresa não informada',
+          email: user.email || 'email@exemplo.com'
+        };
+      });
 
       console.log('✅ Clientes disponíveis:', availableUsersData);
       setAvailableUsers(availableUsersData);
