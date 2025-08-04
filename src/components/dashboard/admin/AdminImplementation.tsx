@@ -184,12 +184,35 @@ const AdminImplementation = () => {
   const fetchAvailableUsers = async () => {
     try {
       setLoadingUsers(true);
-      console.log('🔄 Buscando clientes na tabela profiles...');
+      console.log('🔄 Buscando clientes na tabela user_roles...');
       
-      // Buscar todos os perfis
+      // 1. Buscar usuários com role 'user' na tabela user_roles
+      const { data: userRolesData, error: userRolesError } = await supabase
+        .from('user_roles')
+        .select('user_id, role')
+        .eq('role', 'user');
+
+      if (userRolesError) {
+        console.error('Erro ao buscar user_roles:', userRolesError);
+        setAvailableUsers([]);
+        return;
+      }
+
+      console.log('📊 Usuários com role "user" encontrados:', userRolesData?.length || 0);
+      console.log('👥 User Roles:', userRolesData);
+
+      if (!userRolesData || userRolesData.length === 0) {
+        console.log('Nenhum usuário com role "user" encontrado');
+        setAvailableUsers([]);
+        return;
+      }
+
+      // 2. Buscar perfis dos usuários encontrados
+      const userIds = userRolesData.map(ur => ur.user_id);
       const { data: profilesData, error: profilesError } = await supabase
         .from('profiles')
-        .select('user_id, full_name, company');
+        .select('user_id, full_name, company')
+        .in('user_id', userIds);
 
       if (profilesError) {
         console.error('Erro ao buscar profiles:', profilesError);
@@ -197,22 +220,16 @@ const AdminImplementation = () => {
         return;
       }
 
-      console.log('📊 Total de profiles encontrados:', profilesData?.length || 0);
+      console.log('📋 Perfis encontrados:', profilesData?.length || 0);
       console.log('👤 Profiles:', profilesData);
 
-      if (!profilesData || profilesData.length === 0) {
-        console.log('Nenhum perfil encontrado na tabela profiles');
-        setAvailableUsers([]);
-        return;
-      }
-
-      // Criar lista de clientes disponíveis
-      const availableUsersData = profilesData.map(profile => ({
+      // 3. Criar lista de clientes disponíveis
+      const availableUsersData = profilesData?.map(profile => ({
         user_id: profile.user_id,
         full_name: profile.full_name || 'Nome não informado',
         company: profile.company || 'Empresa não informada',
         email: 'email@exemplo.com'
-      }));
+      })) || [];
 
       console.log('✅ Clientes disponíveis:', availableUsersData);
       setAvailableUsers(availableUsersData);
