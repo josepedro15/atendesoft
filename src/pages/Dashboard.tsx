@@ -14,8 +14,49 @@ import AdminPayments from "@/components/dashboard/admin/AdminPayments";
 import AdminServices from "@/components/dashboard/admin/AdminServices";
 import AdminDashboard from "@/components/dashboard/admin/AdminDashboard";
 
+// Componente para controlar acesso admin
+const AdminRoute = ({ children }: { children: React.ReactNode }) => {
+  const { isAdmin, isInitialized } = useAuth();
+  
+  if (!isInitialized) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-4 text-muted-foreground">Carregando...</p>
+        </div>
+      </div>
+    );
+  }
+  
+  if (!isAdmin) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-glow text-primary">Acesso Negado</h2>
+          <p className="text-muted-foreground mt-2">Você não tem permissão para acessar esta página</p>
+        </div>
+      </div>
+    );
+  }
+  
+  return <>{children}</>;
+};
+
 const Dashboard = () => {
-  const { isAdmin } = useAuth();
+  const { isAdmin, isInitialized } = useAuth();
+
+  // Mostrar loading enquanto não foi inicializado
+  if (!isInitialized) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-4 text-muted-foreground">Carregando dashboard...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background animated-bg">
@@ -48,17 +89,37 @@ const Dashboard = () => {
             <Route path="/payments" element={<PaymentsView />} />
             <Route path="/services" element={<ServicesView />} />
             
-            {/* Admin Routes - apenas para admin */}
-            {isAdmin && (
-              <>
-                <Route path="/users" element={<UsersManagement />} />
-                <Route path="/admin-implementation" element={<AdminImplementation />} />
-                <Route path="/admin-contracts" element={<AdminContracts />} />
-                <Route path="/admin-payments" element={<AdminPayments />} />
-                <Route path="/admin-services" element={<AdminServices />} />
-                <Route path="/settings" element={<div>Configurações (em desenvolvimento)</div>} />
-              </>
-            )}
+            {/* Admin Routes - sempre renderizadas, acesso controlado internamente */}
+            <Route path="/users" element={
+              <AdminRoute>
+                <UsersManagement />
+              </AdminRoute>
+            } />
+            <Route path="/admin-implementation" element={
+              <AdminRoute>
+                <AdminImplementation />
+              </AdminRoute>
+            } />
+            <Route path="/admin-contracts" element={
+              <AdminRoute>
+                <AdminContracts />
+              </AdminRoute>
+            } />
+            <Route path="/admin-payments" element={
+              <AdminRoute>
+                <AdminPayments />
+              </AdminRoute>
+            } />
+            <Route path="/admin-services" element={
+              <AdminRoute>
+                <AdminServices />
+              </AdminRoute>
+            } />
+            <Route path="/settings" element={
+              <AdminRoute>
+                <div>Configurações (em desenvolvimento)</div>
+              </AdminRoute>
+            } />
           </Routes>
         </main>
       </div>

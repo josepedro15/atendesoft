@@ -175,6 +175,7 @@ const AdminImplementation = () => {
   const fetchAvailableUsers = async () => {
     try {
       setLoadingUsers(true);
+      console.log('🔍 Buscando usuários disponíveis...');
       
       // Buscar todos os usuários com role 'user' (clientes)
       const { data: userRolesData, error: rolesError } = await supabase
@@ -183,13 +184,16 @@ const AdminImplementation = () => {
         .eq('role', 'user');
 
       if (rolesError) {
-        console.error('Erro ao buscar roles:', rolesError);
+        console.error('❌ Erro ao buscar roles:', rolesError);
         setAvailableUsers([]);
         return;
       }
 
+      console.log('👥 Usuários com role "user":', userRolesData?.length || 0);
+
       if (userRolesData && userRolesData.length > 0) {
         const userIds = userRolesData.map(r => r.user_id);
+        console.log('🆔 IDs dos usuários:', userIds);
         
         // Buscar perfis dos usuários
         const { data: profilesData, error: profilesError } = await supabase
@@ -198,27 +202,52 @@ const AdminImplementation = () => {
           .in('user_id', userIds);
 
         if (!profilesError && profilesData) {
-          // Filtrar usuários que ainda não têm implementação
-          const existingUserIds = new Set(clients.map(c => c.user_id));
-          const availableUsersData = profilesData
-            .filter(profile => !existingUserIds.has(profile.user_id))
-            .map(profile => ({
+          console.log('📋 Perfis encontrados:', profilesData.length);
+          console.log('👤 Perfis:', profilesData);
+          console.log('📊 Clientes atuais:', clients.length);
+          
+          // Se não há clientes com implementação, todos os usuários estão disponíveis
+          if (clients.length === 0) {
+            console.log('✅ Não há implementações, todos os usuários estão disponíveis');
+            const availableUsersData = profilesData.map(profile => ({
               user_id: profile.user_id,
               full_name: profile.full_name || 'Nome não informado',
               company: profile.company || 'Empresa não informada',
               email: 'email@exemplo.com'
             }));
-          
-          setAvailableUsers(availableUsersData);
+            setAvailableUsers(availableUsersData);
+            console.log('📝 Usuários disponíveis:', availableUsersData);
+          } else {
+            console.log('🔍 Filtrando usuários que já têm implementação...');
+            // Filtrar usuários que ainda não têm implementação
+            const existingUserIds = new Set(clients.map(c => c.user_id));
+            console.log('🚫 IDs com implementação existente:', Array.from(existingUserIds));
+            const availableUsersData = profilesData
+              .filter(profile => !existingUserIds.has(profile.user_id))
+              .map(profile => ({
+                user_id: profile.user_id,
+                full_name: profile.full_name || 'Nome não informado',
+                company: profile.company || 'Empresa não informada',
+                email: 'email@exemplo.com'
+              }));
+            
+            setAvailableUsers(availableUsersData);
+            console.log('📝 Usuários disponíveis após filtro:', availableUsersData);
+          }
+        } else {
+          console.error('❌ Erro ao buscar perfis:', profilesError);
+          setAvailableUsers([]);
         }
       } else {
+        console.log('⚠️ Nenhum usuário com role "user" encontrado');
         setAvailableUsers([]);
       }
     } catch (error) {
-      console.error('Erro ao buscar usuários disponíveis:', error);
+      console.error('❌ Erro ao buscar usuários disponíveis:', error);
       setAvailableUsers([]);
     } finally {
       setLoadingUsers(false);
+      console.log('✅ Busca de usuários concluída');
     }
   };
 
@@ -256,7 +285,10 @@ const AdminImplementation = () => {
       
       // Recarregar dados
       await fetchData();
-      await fetchAvailableUsers();
+      // Recarregar usuários disponíveis após um pequeno delay
+      setTimeout(() => {
+        fetchAvailableUsers();
+      }, 500);
     } catch (error) {
       console.error('Erro ao criar implementação:', error);
       toast({
