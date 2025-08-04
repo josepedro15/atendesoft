@@ -308,15 +308,22 @@ const AdminDashboard = () => {
   }
 
   return (
-    <div className="space-y-8 p-6">
+    <div className="space-y-8 p-6 max-w-7xl mx-auto">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-glow text-primary mb-2">
-          Dashboard Administrativo
-        </h1>
-        <p className="text-muted-foreground">
-          Visão geral e controle central do sistema
-        </p>
+      <div className="text-center lg:text-left">
+        <div className="flex items-center justify-center lg:justify-start gap-4 mb-4">
+          <div className="h-12 w-12 rounded-xl bg-primary/20 flex items-center justify-center">
+            <BarChart3 className="h-6 w-6 text-primary" />
+          </div>
+          <div>
+            <h1 className="text-4xl font-bold text-glow text-primary">
+              Dashboard Administrativo
+            </h1>
+            <p className="text-lg text-muted-foreground mt-2">
+              Visão geral e controle central do sistema
+            </p>
+          </div>
+        </div>
       </div>
 
       {/* 1. Cards de Estatísticas */}

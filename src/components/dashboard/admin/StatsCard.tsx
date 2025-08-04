@@ -1,7 +1,8 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowUpRight, Users, GitBranch, CreditCard, DollarSign, Layers, MessageSquare } from "lucide-react";
+import { ArrowUpRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { componentStyles, getStatusColor } from "@/lib/design-system";
 
 interface StatsCardProps {
   title: string;
@@ -32,52 +33,52 @@ const StatsCard = ({
   const getVariantStyles = () => {
     switch (variant) {
       case 'success':
-        return 'border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950';
+        return 'border-success/30 bg-success/10 dark:border-success/20 dark:bg-success/5';
       case 'warning':
-        return 'border-yellow-200 bg-yellow-50 dark:border-yellow-800 dark:bg-yellow-950';
+        return 'border-warning/30 bg-warning/10 dark:border-warning/20 dark:bg-warning/5';
       case 'danger':
-        return 'border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-950';
+        return 'border-destructive/30 bg-destructive/10 dark:border-destructive/20 dark:bg-destructive/5';
       default:
-        return 'border-primary/20 bg-card';
+        return 'border-primary/20 bg-card/50 backdrop-blur-sm';
     }
   };
 
   const getIconColor = () => {
     switch (variant) {
       case 'success':
-        return 'text-green-600 dark:text-green-400';
+        return 'text-success';
       case 'warning':
-        return 'text-yellow-600 dark:text-yellow-400';
+        return 'text-warning';
       case 'danger':
-        return 'text-red-600 dark:text-red-400';
+        return 'text-destructive';
       default:
         return 'text-primary';
     }
   };
 
   return (
-    <Card className={`card-glass ${getVariantStyles()}`}>
+    <Card className={`${componentStyles.card.glass} ${getVariantStyles()} transition-all duration-300 hover:shadow-lg`}>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="text-sm font-medium text-muted-foreground">
           {title}
         </CardTitle>
-        <div className={`h-8 w-8 rounded-lg flex items-center justify-center ${getIconColor()}`}>
+        <div className={`h-10 w-10 rounded-xl flex items-center justify-center ${getIconColor()} bg-background/50 backdrop-blur-sm`}>
           {icon}
         </div>
       </CardHeader>
       <CardContent>
-        <div className="text-2xl font-bold">{value}</div>
+        <div className="text-3xl font-bold tracking-tight">{value}</div>
         {description && (
-          <p className="text-xs text-muted-foreground mt-1">
+          <p className="text-sm text-muted-foreground mt-2">
             {description}
           </p>
         )}
         {trend && (
-          <div className="flex items-center mt-2">
+          <div className="flex items-center mt-3">
             <ArrowUpRight 
-              className={`h-4 w-4 mr-1 ${trend.isPositive ? 'text-green-600' : 'text-red-600 rotate-180'}`} 
+              className={`h-4 w-4 mr-2 ${trend.isPositive ? 'text-success' : 'text-destructive rotate-180'}`} 
             />
-            <span className={`text-xs ${trend.isPositive ? 'text-green-600' : 'text-red-600'}`}>
+            <span className={`text-sm font-medium ${trend.isPositive ? 'text-success' : 'text-destructive'}`}>
               {trend.value}% {trend.isPositive ? 'aumento' : 'diminuição'}
             </span>
           </div>
@@ -86,11 +87,11 @@ const StatsCard = ({
           <Button 
             variant="ghost" 
             size="sm" 
-            className="mt-2 p-0 h-auto text-xs text-primary hover:text-primary/80"
+            className="mt-3 p-0 h-auto text-sm text-primary hover:text-primary/80 hover:bg-primary/10"
             onClick={() => navigate(link)}
           >
             {linkText}
-            <ArrowUpRight className="h-3 w-3 ml-1" />
+            <ArrowUpRight className="h-4 w-4 ml-1" />
           </Button>
         )}
       </CardContent>

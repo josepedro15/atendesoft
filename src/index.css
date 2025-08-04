@@ -42,7 +42,9 @@
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 98%;
     --success: 142 71% 45%;
+    --success-foreground: 0 0% 98%;
     --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 98%;
 
     --border: 220 13% 20%;             /* Dark borders */
     --input: 220 13% 12%;              /* Input backgrounds */
@@ -156,7 +158,11 @@
 
   /* Card variants */
   .card-glass {
-    @apply glass rounded-xl p-6 shadow-lg;
+    @apply glass rounded-xl p-6 shadow-lg transition-all duration-300;
+  }
+
+  .card-elevated {
+    @apply rounded-xl border bg-card text-card-foreground shadow-lg hover:shadow-xl transition-shadow;
   }
 
   /* Animated background */

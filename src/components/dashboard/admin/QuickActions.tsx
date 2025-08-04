@@ -9,6 +9,7 @@ import {
   Zap
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { componentStyles } from "@/lib/design-system";
 
 interface QuickAction {
   id: string;
@@ -30,21 +31,23 @@ const QuickActions = ({ actions }: QuickActionsProps) => {
   const getColorStyles = (color?: string) => {
     switch (color) {
       case 'success':
-        return 'bg-green-500 hover:bg-green-600 text-white border-green-500';
+        return 'bg-success hover:bg-success/90 text-white border-success/30 shadow-lg hover:shadow-xl';
       case 'warning':
-        return 'bg-yellow-500 hover:bg-yellow-600 text-white border-yellow-500';
+        return 'bg-warning hover:bg-warning/90 text-white border-warning/30 shadow-lg hover:shadow-xl';
       case 'danger':
-        return 'bg-red-500 hover:bg-red-600 text-white border-red-500';
+        return 'bg-destructive hover:bg-destructive/90 text-white border-destructive/30 shadow-lg hover:shadow-xl';
       default:
-        return 'bg-primary hover:bg-primary/90 text-primary-foreground border-primary';
+        return 'bg-primary hover:bg-primary/90 text-primary-foreground border-primary/30 shadow-lg hover:shadow-xl';
     }
   };
 
   return (
-    <Card className="card-glass border-primary/20">
+    <Card className={`${componentStyles.card.glass} border-primary/20`}>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Zap className="h-5 w-5" />
+        <CardTitle className="flex items-center gap-3 text-xl font-semibold">
+          <div className="h-8 w-8 rounded-lg bg-primary/20 flex items-center justify-center">
+            <Zap className="h-5 w-5 text-primary" />
+          </div>
           Ações Rápidas
         </CardTitle>
       </CardHeader>
@@ -54,17 +57,17 @@ const QuickActions = ({ actions }: QuickActionsProps) => {
             <Button
               key={action.id}
               variant={action.variant || 'default'}
-              className={`h-auto p-4 flex flex-col items-center gap-2 text-center transition-all duration-200 hover:scale-105 ${
-                action.color ? getColorStyles(action.color) : ''
+              className={`h-auto p-6 flex flex-col items-center gap-3 text-center transition-all duration-300 hover:scale-105 rounded-xl ${
+                action.color ? getColorStyles(action.color) : 'bg-card hover:bg-card/80 border border-border'
               }`}
               onClick={() => navigate(action.route)}
             >
-              <div className="h-8 w-8 flex items-center justify-center">
+              <div className="h-12 w-12 rounded-xl bg-background/50 backdrop-blur-sm flex items-center justify-center">
                 {action.icon}
               </div>
               <div>
-                <div className="font-medium">{action.title}</div>
-                <div className="text-xs opacity-80">{action.description}</div>
+                <div className="font-semibold text-base">{action.title}</div>
+                <div className="text-sm opacity-80 mt-1">{action.description}</div>
               </div>
             </Button>
           ))}

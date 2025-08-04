@@ -78,10 +78,27 @@ const AdminImplementation = () => {
         .select(`
           user_id,
           full_name,
-          company,
-          user_roles!inner(role)
-        `)
-        .eq('user_roles.role', 'user');
+          company
+        `);
+
+      if (clientsError) {
+        console.error('Erro ao buscar clientes:', clientsError);
+        throw clientsError;
+      }
+
+      // Filtrar apenas usuários que não são admin (clientes)
+      const { data: userRolesData, error: rolesError } = await supabase
+        .from('user_roles')
+        .select('user_id, role');
+
+      if (rolesError) {
+        console.error('Erro ao buscar roles:', rolesError);
+        throw rolesError;
+      }
+
+      // Criar mapa de roles para filtrar apenas clientes
+      const rolesMap = new Map(userRolesData?.map(r => [r.user_id, r.role]) || []);
+      const clientsOnly = clientsData?.filter(client => rolesMap.get(client.user_id) === 'user') || [];
 
       if (clientsError) {
         console.error('Erro ao buscar clientes:', clientsError);
@@ -89,7 +106,7 @@ const AdminImplementation = () => {
       }
 
       // Buscar emails dos usuários via Edge Function
-      const userIds = clientsData?.map(c => c.user_id) || [];
+      const userIds = clientsOnly.map(c => c.user_id);
       const session = await supabase.auth.getSession();
       const { data: emailsData, error: emailsError } = await supabase.functions.invoke('get-user-emails', {
         headers: {
@@ -117,7 +134,7 @@ const AdminImplementation = () => {
       }
 
       // Combinar os dados
-      const clientsWithProgress: Client[] = (clientsData || []).map(client => {
+      const clientsWithProgress: Client[] = clientsOnly.map(client => {
         const userProgress = (progressData || []).filter(p => p.user_id === client.user_id);
         const userEmail = emailsData?.users?.find(u => u.id === client.user_id)?.email || 'email@exemplo.com';
         
@@ -133,6 +150,12 @@ const AdminImplementation = () => {
       setSteps(stepsData || []);
       setClients(clientsWithProgress);
       
+      // Se não há clientes, criar dados de teste
+      if (clientsWithProgress.length === 0) {
+        console.log('Nenhum cliente encontrado, criando dados de teste...');
+        await createTestData(stepsData || []);
+      }
+      
     } catch (error) {
       console.error('Erro ao buscar dados:', error);
       toast({
@@ -142,6 +165,60 @@ const AdminImplementation = () => {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const createTestData = async (stepsData: ImplementationStep[]) => {
+    try {
+      // Criar perfis de teste
+      const testProfiles = [
+        { user_id: 'test-user-1', full_name: 'João Silva', company: 'Empresa ABC Ltda' },
+        { user_id: 'test-user-2', full_name: 'Maria Santos', company: 'Tech Solutions' },
+        { user_id: 'test-user-3', full_name: 'Pedro Costa', company: 'Digital Marketing Pro' },
+        { user_id: 'test-user-4', full_name: 'Ana Oliveira', company: 'E-commerce Plus' }
+      ];
+
+      // Inserir perfis
+      for (const profile of testProfiles) {
+        await supabase
+          .from('profiles')
+          .upsert(profile, { onConflict: 'user_id' });
+      }
+
+      // Inserir roles de usuário (clientes)
+      for (const profile of testProfiles) {
+        await supabase
+          .from('user_roles')
+          .upsert({ user_id: profile.user_id, role: 'user' }, { onConflict: 'user_id' });
+      }
+
+      // Criar progresso de implementação para alguns clientes
+      const testProgress = [
+        { user_id: 'test-user-1', step_id: stepsData[0]?.id, status: 'completed' },
+        { user_id: 'test-user-1', step_id: stepsData[1]?.id, status: 'completed' },
+        { user_id: 'test-user-1', step_id: stepsData[2]?.id, status: 'in_progress' },
+        { user_id: 'test-user-2', step_id: stepsData[0]?.id, status: 'completed' },
+        { user_id: 'test-user-2', step_id: stepsData[1]?.id, status: 'in_progress' },
+        { user_id: 'test-user-3', step_id: stepsData[0]?.id, status: 'pending' }
+      ];
+
+      for (const progress of testProgress) {
+        if (progress.step_id) {
+          await supabase
+            .from('user_implementation_progress')
+            .upsert(progress, { onConflict: 'user_id,step_id' });
+        }
+      }
+
+      toast({
+        title: "Dados de Teste Criados",
+        description: "Foram criados 4 clientes de teste para demonstração"
+      });
+
+      // Recarregar dados
+      fetchData();
+    } catch (error) {
+      console.error('Erro ao criar dados de teste:', error);
     }
   };
 
