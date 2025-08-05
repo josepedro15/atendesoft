@@ -41,19 +41,25 @@ export const useAuth = () => {
         setProfile(profileData);
       }
 
-      // Buscar role do usuário
-      const { data: roleData, error: roleError } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', userId)
-        .single();
+      // Buscar role do usuário - usar RPC se disponível, senão usar query direta
+      try {
+        const { data: roleData, error: roleError } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', userId)
+          .single();
 
-      if (roleError && roleError.code !== 'PGRST116') {
-        console.error('Erro ao buscar role:', roleError);
+        if (roleError && roleError.code !== 'PGRST116') {
+          console.error('Erro ao buscar role:', roleError);
+          // Se não conseguir buscar role, assumir como user
+          setUserRole('user');
+        } else {
+          console.log('Role data:', roleData);
+          setUserRole(roleData?.role || 'user');
+        }
+      } catch (roleError) {
+        console.error('Erro ao buscar role (fallback):', roleError);
         setUserRole('user');
-      } else {
-        console.log('Role data:', roleData);
-        setUserRole(roleData?.role || 'user');
       }
     } catch (error) {
       console.error('Erro ao buscar dados do usuário:', error);
@@ -165,6 +171,17 @@ export const useAuth = () => {
 
   const isAdmin = userRole === 'admin';
   const isAuthenticated = !!user;
+
+  console.log('useAuth Debug:', {
+    user: !!user,
+    session: !!session,
+    isAuthenticated,
+    isAdmin,
+    isLoading,
+    isInitialized,
+    userRole,
+    profile: !!profile
+  });
 
   return {
     user,

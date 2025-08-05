@@ -8,9 +8,17 @@ interface ProtectedRouteProps {
 }
 
 const ProtectedRoute = ({ children, requireAdmin = false }: ProtectedRouteProps) => {
-  const { isAuthenticated, isAdmin, isLoading } = useAuth();
+  const { isAuthenticated, isAdmin, isLoading, isInitialized } = useAuth();
 
-  if (isLoading) {
+  console.log('ProtectedRoute Debug:', {
+    isAuthenticated,
+    isAdmin,
+    isLoading,
+    isInitialized,
+    requireAdmin
+  });
+
+  if (isLoading || !isInitialized) {
     return (
       <div className="min-h-screen bg-background animated-bg">
         {/* Header Skeleton */}
