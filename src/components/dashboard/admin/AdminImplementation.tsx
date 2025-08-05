@@ -104,6 +104,12 @@ const AdminImplementation = () => {
     }
   }, [showAddClientDialog]);
 
+  // Monitorar mudanças no currentTab
+  useEffect(() => {
+    console.log('🔥 currentTab MUDOU PARA:', currentTab);
+    console.log('🔥 Renderizando conteúdo da aba:', currentTab);
+  }, [currentTab]);
+
   const fetchData = async () => {
     try {
       setLoading(true);
@@ -431,28 +437,76 @@ const AdminImplementation = () => {
       {/* Abas Ultra-Simples */}
       <div className="w-full">
         <div className="grid w-full grid-cols-2 gap-2 mb-6">
-          <button
-            onClick={() => setCurrentTab('in-progress')}
-            className={`flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-medium transition-all ${
-              currentTab === 'in-progress' 
-                ? 'bg-primary text-primary-foreground shadow-lg' 
-                : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
-            }`}
+          <div
+            onClick={() => {
+              console.log('🔥 CLIQUE EM ANDAMENTO DETECTADO!');
+              console.log('🔥 Estado atual:', currentTab);
+              setCurrentTab('in-progress');
+              console.log('🔥 Estado definido para: in-progress');
+            }}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px',
+              padding: '8px 16px',
+              borderRadius: '8px',
+              fontWeight: '500',
+              cursor: 'pointer',
+              transition: 'all 0.2s',
+              backgroundColor: currentTab === 'in-progress' ? '#3b82f6' : '#374151',
+              color: currentTab === 'in-progress' ? 'white' : '#9ca3af',
+              boxShadow: currentTab === 'in-progress' ? '0 4px 6px -1px rgba(0, 0, 0, 0.1)' : 'none'
+            }}
+            onMouseEnter={(e) => {
+              if (currentTab !== 'in-progress') {
+                e.currentTarget.style.backgroundColor = '#4b5563';
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (currentTab !== 'in-progress') {
+                e.currentTarget.style.backgroundColor = '#374151';
+              }
+            }}
           >
-            <Play className="h-4 w-4" />
+            <Play style={{ width: '16px', height: '16px' }} />
             Em Andamento ({clientsInProgress.length})
-          </button>
-          <button
-            onClick={() => setCurrentTab('completed')}
-            className={`flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-medium transition-all ${
-              currentTab === 'completed' 
-                ? 'bg-primary text-primary-foreground shadow-lg' 
-                : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
-            }`}
+          </div>
+          <div
+            onClick={() => {
+              console.log('🔥 CLIQUE CONCLUÍDOS DETECTADO!');
+              console.log('🔥 Estado atual:', currentTab);
+              setCurrentTab('completed');
+              console.log('🔥 Estado definido para: completed');
+            }}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px',
+              padding: '8px 16px',
+              borderRadius: '8px',
+              fontWeight: '500',
+              cursor: 'pointer',
+              transition: 'all 0.2s',
+              backgroundColor: currentTab === 'completed' ? '#3b82f6' : '#374151',
+              color: currentTab === 'completed' ? 'white' : '#9ca3af',
+              boxShadow: currentTab === 'completed' ? '0 4px 6px -1px rgba(0, 0, 0, 0.1)' : 'none'
+            }}
+            onMouseEnter={(e) => {
+              if (currentTab !== 'completed') {
+                e.currentTarget.style.backgroundColor = '#4b5563';
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (currentTab !== 'completed') {
+                e.currentTarget.style.backgroundColor = '#374151';
+              }
+            }}
           >
-            <CheckCircle className="h-4 w-4" />
+            <CheckCircle style={{ width: '16px', height: '16px' }} />
             Concluídos ({clientsCompleted.length})
-          </button>
+          </div>
         </div>
 
         {/* Conteúdo das Abas */}
