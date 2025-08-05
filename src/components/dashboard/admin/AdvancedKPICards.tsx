@@ -53,8 +53,28 @@ const Sparkline = ({ data }: { data: number[] }) => {
 
 // Card MRR
 export const MRRCard = () => {
-  const { advancedKPIs } = useAdvancedKPIs();
+  const { advancedKPIs, loading } = useAdvancedKPIs();
   const { mrr } = advancedKPIs;
+  
+  if (loading) {
+    return (
+      <Card className="border-primary/20 hover:border-primary/40 transition-colors">
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium text-muted-foreground">
+            MRR
+          </CardTitle>
+          <div className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center">
+            <TrendingUp className="h-4 w-4 text-primary" />
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold text-glow text-primary">
+            Carregando...
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
   
   return (
     <Card className="border-primary/20 hover:border-primary/40 transition-colors">

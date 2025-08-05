@@ -220,15 +220,9 @@ export const useAdvancedKPIs = () => {
     }
   };
 
-  // Auto-refresh a cada 60 segundos
+  // Fetch inicial apenas
   useEffect(() => {
     fetchAdvancedKPIs();
-    
-    const interval = setInterval(() => {
-      fetchAdvancedKPIs();
-    }, 60000);
-
-    return () => clearInterval(interval);
   }, []);
 
   return {
