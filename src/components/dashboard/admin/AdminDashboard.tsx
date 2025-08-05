@@ -221,17 +221,27 @@ const AdminDashboard = () => {
         {/* Botão para carregar KPIs */}
         <div className="text-center">
           <Button 
-            onClick={() => setShowKPIs(true)}
+            onClick={() => {
+              console.log('🔍 Botão KPIs clicado, showKPIs:', !showKPIs);
+              setShowKPIs(true);
+            }}
             className="px-8 py-3 text-lg"
             disabled={showKPIs}
           >
             {showKPIs ? 'KPIs Carregados' : 'Carregar KPIs Avançados'}
           </Button>
+          <p className="text-sm text-muted-foreground mt-2">
+            Status: {showKPIs ? 'Carregando KPIs...' : 'Clique para carregar'}
+          </p>
         </div>
 
         {/* KPIs carregados condicionalmente */}
         {showKPIs && (
           <>
+            <div className="text-center p-4 bg-green-500/10 border border-green-500/20 rounded-lg">
+              <p className="text-green-500 font-medium">KPIs carregados com sucesso!</p>
+            </div>
+            
             {/* MRR e ARR */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <MRRCard />
