@@ -20,7 +20,10 @@ Deno.serve(async (req) => {
     const body = await req.json()
     const { userId, email, full_name, company, phone, role } = body
     
-    console.log('Update user request:', { userId, email, full_name, company, phone, role })
+    console.log('=== UPDATE USER FUNCTION START ===');
+    console.log('Update user request:', { userId, email, full_name, company, phone, role });
+    console.log('Request headers:', Object.fromEntries(req.headers.entries()));
+    console.log('Request method:', req.method);
 
     // Verificar se o usuário atual é admin
     const authHeader = req.headers.get('Authorization')
@@ -112,6 +115,9 @@ Deno.serve(async (req) => {
     }
     console.log('Role updated successfully:', roleData)
 
+    console.log('=== UPDATE USER FUNCTION SUCCESS ===');
+    console.log('All operations completed successfully');
+    
     return new Response(
       JSON.stringify({ success: true }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
