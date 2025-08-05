@@ -90,6 +90,7 @@ const AdminImplementation = () => {
   const [dataFetched, setDataFetched] = useState(false);
   const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set());
   const [showDetailsDialog, setShowDetailsDialog] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState('in-progress');
   const { toast } = useToast();
   const { isAdmin, isInitialized } = useAuth();
 
@@ -105,6 +106,11 @@ const AdminImplementation = () => {
       fetchAvailableUsers();
     }
   }, [showAddClientDialog]);
+
+  // Monitorar mudanças na aba ativa
+  useEffect(() => {
+    console.log('🔄 Aba alterada via useEffect:', activeTab);
+  }, [activeTab]);
 
   const fetchData = async () => {
     try {
@@ -425,14 +431,18 @@ const AdminImplementation = () => {
     setShowDetailsDialog(clientId);
   };
 
-  // Estado para controlar aba ativa
-  const [activeTab, setActiveTab] = useState('in-progress');
-
   // Handler para mudança de aba
   const handleTabChange = (value: string) => {
     console.log('🔍 Mudando aba para:', value);
+    console.log('🔍 Estado anterior:', activeTab);
+    console.log('🔍 Novo estado:', value);
     setActiveTab(value);
   };
+
+  // Debug: Log do estado atual das abas
+  console.log('🔍 Estado atual da aba:', activeTab);
+  console.log('🔍 Clientes em andamento:', clientsInProgress.length);
+  console.log('🔍 Clientes concluídos:', clientsCompleted.length);
 
   // Verificar se é admin
   if (!isAdmin) {
