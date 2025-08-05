@@ -94,6 +94,8 @@ export const useUsers = () => {
   const updateUser = useCallback(async (userId: string, userData: any) => {
     try {
       setLoading(true);
+      console.log('Updating user:', userId, 'with data:', userData);
+      
       const session = await supabase.auth.getSession();
       
       const { data, error } = await supabase.functions.invoke('update-user', {
@@ -103,7 +105,12 @@ export const useUsers = () => {
         }
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Function error:', error);
+        throw error;
+      }
+
+      console.log('Update response:', data);
 
       toast({
         title: "Sucesso",
@@ -114,9 +121,10 @@ export const useUsers = () => {
       return true;
     } catch (error) {
       console.error('Erro ao atualizar usuário:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
       toast({
         title: "Erro",
-        description: "Não foi possível atualizar o usuário", 
+        description: `Não foi possível atualizar o usuário: ${errorMessage}`, 
         variant: "destructive"
       });
       return false;

@@ -17,7 +17,10 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    const { userId, email, full_name, company, phone, role } = await req.json()
+    const body = await req.json()
+    const { userId, email, full_name, company, phone, role } = body
+    
+    console.log('Update user request:', { userId, email, full_name, company, phone, role })
 
     // Verificar se o usuário atual é admin
     const authHeader = req.headers.get('Authorization')
@@ -54,16 +57,23 @@ Deno.serve(async (req) => {
 
     // Atualizar email se fornecido
     if (email) {
+      console.log('Updating email for user:', userId)
       const { error: emailError } = await supabaseClient.auth.admin.updateUserById(
         userId,
         { email }
       )
       if (emailError) {
         console.error('Error updating email:', emailError)
+        return new Response(
+          JSON.stringify({ error: 'Failed to update email: ' + emailError.message }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
       }
+      console.log('Email updated successfully')
     }
 
     // Atualizar profile
+    console.log('Updating profile for user:', userId)
     const { error: profileError } = await supabaseClient
       .from('profiles')
       .upsert({
@@ -75,9 +85,15 @@ Deno.serve(async (req) => {
 
     if (profileError) {
       console.error('Error updating profile:', profileError)
+      return new Response(
+        JSON.stringify({ error: 'Failed to update profile: ' + profileError.message }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
     }
+    console.log('Profile updated successfully')
 
     // Atualizar role
+    console.log('Updating role for user:', userId, 'to:', role)
     const { error: roleError } = await supabaseClient
       .from('user_roles')
       .upsert({
@@ -87,7 +103,12 @@ Deno.serve(async (req) => {
 
     if (roleError) {
       console.error('Error updating role:', roleError)
+      return new Response(
+        JSON.stringify({ error: 'Failed to update role: ' + roleError.message }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
     }
+    console.log('Role updated successfully')
 
     return new Response(
       JSON.stringify({ success: true }),
