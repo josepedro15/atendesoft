@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
-import { useAuth } from "@/hooks/useAuth";
-import { useDashboard } from "@/hooks/useDashboard";
+// import { useAuth } from "@/hooks/useAuth";
+// import { useDashboard } from "@/hooks/useDashboard";
 import { useNavigate } from "react-router-dom";
 import { 
   Users, 
@@ -100,46 +100,22 @@ const generateStats = (stats: any) => [
 const mockQuickActions = [
   {
     id: '1',
-    title: 'Criar Usuário',
-    description: 'Adicionar novo cliente',
+    title: 'Adicionar Cliente',
+    description: 'Cadastrar novo usuário',
     icon: <UserPlus className="h-4 w-4" />,
     route: '/dashboard/users',
     color: 'primary' as const
   },
   {
     id: '2',
-    title: 'Nova Implementação',
-    description: 'Iniciar projeto',
-    icon: <GitBranch className="h-4 w-4" />,
-    route: '/dashboard/admin-implementation',
+    title: 'Novo Contrato',
+    description: 'Criar contrato',
+    icon: <FileText className="h-4 w-4" />,
+    route: '/dashboard/admin-contracts',
     color: 'success' as const
   },
   {
     id: '3',
-    title: 'Adicionar Contrato',
-    description: 'Criar novo contrato',
-    icon: <FileText className="h-4 w-4" />,
-    route: '/dashboard/admin-contracts',
-    color: 'warning' as const
-  },
-  {
-    id: '4',
-    title: 'Registrar Pagamento',
-    description: 'Lançar pagamento',
-    icon: <CreditCard className="h-4 w-4" />,
-    route: '/dashboard/admin-payments',
-    color: 'success' as const
-  },
-  {
-    id: '5',
-    title: 'Adicionar Serviço',
-    description: 'Criar novo serviço',
-    icon: <Layers className="h-4 w-4" />,
-    route: '/dashboard/admin-services',
-    color: 'primary' as const
-  },
-  {
-    id: '6',
     title: 'Configurações',
     description: 'Ajustes do sistema',
     icon: <Settings className="h-4 w-4" />,
@@ -149,41 +125,12 @@ const mockQuickActions = [
 ];
 
 const AdminDashboard = () => {
-  const { isAdmin, isLoading, isInitialized } = useAuth();
-  // Temporariamente comentado para debug
-  // const { stats, loading: dashboardLoading, error } = useDashboard();
+  // Temporariamente desabilitado useAuth para debug
+  // const { isAdmin, isLoading, isInitialized } = useAuth();
   const navigate = useNavigate();
 
-  useEffect(() => {
-    // Só redirecionar se já foi inicializado e não é admin
-    if (isInitialized && !isLoading && !isAdmin) {
-      navigate('/dashboard');
-    }
-  }, [isAdmin, isLoading, isInitialized, navigate]);
-
-  // Mostrar loading enquanto não foi inicializado
-  if (!isInitialized || isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-4 text-muted-foreground">Carregando dashboard...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Verificar se é admin após inicialização
-  if (!isAdmin) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold text-glow text-primary">Acesso Negado</h2>
-          <p className="text-muted-foreground mt-2">Você não tem permissão para acessar esta página</p>
-        </div>
-      </div>
-    );
-  }
+  // Debug: Renderizar diretamente sem verificações
+  console.log('🔍 AdminDashboard - Renderizando sem useAuth');
 
   return (
     <div className="space-y-8 p-6 max-w-7xl mx-auto">
@@ -198,7 +145,7 @@ const AdminDashboard = () => {
               Dashboard Administrativo
             </h1>
             <p className="text-lg text-muted-foreground mt-2">
-              Visão geral e controle central do sistema
+              Modo Debug - Testando renderização
             </p>
           </div>
         </div>
@@ -211,64 +158,36 @@ const AdminDashboard = () => {
       <div className="text-center p-8 border border-dashed border-primary/20 rounded-lg">
         <h3 className="text-xl font-bold text-primary mb-4">Dashboard em Modo Debug</h3>
         <p className="text-muted-foreground">
-          Hooks desabilitados temporariamente para identificar problema de renderização
+          useAuth desabilitado temporariamente para identificar problema de renderização
         </p>
       </div>
 
       {/* Seção KPI Avançados - Temporariamente desabilitada para debug */}
-      {!loading && (
-        <div className="space-y-6">
-          <div className="text-center lg:text-left">
-            <h2 className="text-3xl font-bold text-glow text-primary">
-              KPI Avançados
-            </h2>
-            <p className="text-lg text-muted-foreground mt-2">
-              Métricas avançadas para análise de performance
-            </p>
-          </div>
-          
-          <div className="text-center p-8 border border-dashed border-primary/20 rounded-lg">
-            <p className="text-muted-foreground">
-              KPIs avançados temporariamente desabilitados para debug
-            </p>
-          </div>
-        </div>
-      )}
-
-      {/* Mostrar erro se houver */}
-      {/* Temporariamente comentado para debug */}
-      {/* {error && (
-        <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4">
-          <p className="text-destructive text-sm">
-            Erro ao carregar dados: {error}
+      <div className="space-y-6">
+        <div className="text-center lg:text-left">
+          <h2 className="text-3xl font-bold text-glow text-primary">
+            KPI Avançados
+          </h2>
+          <p className="text-lg text-muted-foreground mt-2">
+            Métricas avançadas para análise de performance
           </p>
         </div>
-      )} */}
+        
+        <div className="text-center p-8 border border-dashed border-primary/20 rounded-lg">
+          <p className="text-muted-foreground">
+            KPIs avançados temporariamente desabilitados para debug
+          </p>
+        </div>
+      </div>
 
       {/* Ações Rápidas */}
       <QuickActions actions={mockQuickActions} />
 
       {/* Placeholder para outras seções */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="p-8 text-center text-muted-foreground border border-dashed rounded-xl">
-          <h3 className="text-lg font-semibold mb-2">Implementações</h3>
-          <p>Componente em desenvolvimento...</p>
-        </div>
-        <div className="p-8 text-center text-muted-foreground border border-dashed rounded-xl">
-          <h3 className="text-lg font-semibold mb-2">Pagamentos</h3>
-          <p>Componente em desenvolvimento...</p>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="p-8 text-center text-muted-foreground border border-dashed rounded-xl">
-          <h3 className="text-lg font-semibold mb-2">Contratos</h3>
-          <p>Componente em desenvolvimento...</p>
-        </div>
-        <div className="p-8 text-center text-muted-foreground border border-dashed rounded-xl">
-          <h3 className="text-lg font-semibold mb-2">Alertas</h3>
-          <p>Componente em desenvolvimento...</p>
-        </div>
+      <div className="text-center p-8 border border-dashed border-primary/20 rounded-lg">
+        <p className="text-muted-foreground">
+          Outras seções serão adicionadas aqui
+        </p>
       </div>
     </div>
   );
