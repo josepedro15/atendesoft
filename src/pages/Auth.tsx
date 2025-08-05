@@ -41,7 +41,7 @@ const Auth = () => {
         
         // Redirecionar usuário autenticado
         if (session?.user) {
-          navigate('/');
+          navigate('/dashboard');
         }
       }
     );
@@ -52,7 +52,7 @@ const Auth = () => {
       setUser(session?.user ?? null);
       
       if (session?.user) {
-        navigate('/');
+        navigate('/dashboard');
       }
     });
 

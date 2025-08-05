@@ -144,7 +144,7 @@ export const useAuth = () => {
       subscription.unsubscribe();
       clearTimeout(timeout);
     };
-  }, [fetchUserData, isInitialized]);
+  }, [fetchUserData]);
 
   const signOut = async () => {
     try {
