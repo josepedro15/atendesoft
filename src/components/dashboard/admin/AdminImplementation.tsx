@@ -89,6 +89,7 @@ const AdminImplementation = () => {
   const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set());
   const [showDetailsDialog, setShowDetailsDialog] = useState<string | null>(null);
   const [currentTab, setCurrentTab] = useState<'in-progress' | 'completed'>('in-progress');
+  const [forceUpdate, setForceUpdate] = useState(0);
   const { toast } = useToast();
   const { isAdmin, isInitialized } = useAuth();
 
@@ -108,7 +109,8 @@ const AdminImplementation = () => {
   useEffect(() => {
     console.log('🔥 currentTab MUDOU PARA:', currentTab);
     console.log('🔥 Renderizando conteúdo da aba:', currentTab);
-  }, [currentTab]);
+    console.log('🔥 Force update count:', forceUpdate);
+  }, [currentTab, forceUpdate]);
 
   const fetchData = async () => {
     try {
@@ -442,7 +444,9 @@ const AdminImplementation = () => {
               console.log('🔥 CLIQUE EM ANDAMENTO DETECTADO!');
               console.log('🔥 Estado atual:', currentTab);
               setCurrentTab('in-progress');
+              setForceUpdate(prev => prev + 1);
               console.log('🔥 Estado definido para: in-progress');
+              console.log('🔥 Forçando re-renderização...');
             }}
             style={{
               display: 'flex',
@@ -477,7 +481,9 @@ const AdminImplementation = () => {
               console.log('🔥 CLIQUE CONCLUÍDOS DETECTADO!');
               console.log('🔥 Estado atual:', currentTab);
               setCurrentTab('completed');
+              setForceUpdate(prev => prev + 1);
               console.log('🔥 Estado definido para: completed');
+              console.log('🔥 Forçando re-renderização...');
             }}
             style={{
               display: 'flex',
@@ -511,6 +517,7 @@ const AdminImplementation = () => {
 
         {/* Conteúdo das Abas */}
         {currentTab === 'in-progress' && (
+          <div key={`in-progress-${forceUpdate}`}>
           <div>
             {loading ? (
               <div className="flex items-center justify-center p-8">
@@ -628,10 +635,11 @@ const AdminImplementation = () => {
               </div>
             )}
           </div>
+        </div>
         )}
 
         {currentTab === 'completed' && (
-          <div>
+          <div key={`completed-${forceUpdate}`}>
             {loading ? (
               <div className="flex items-center justify-center p-8">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
