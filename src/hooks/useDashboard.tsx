@@ -181,28 +181,61 @@ export const useDashboard = () => {
       }
 
       // 5. Calcular receita mensal
+      console.log('💰 Debug - Calculando receita mensal...');
+      console.log('💰 Debug - Mês atual:', currentMonth, 'Ano atual:', currentYear);
+      
       const currentMonthPayments = paymentsData?.filter(payment => {
         const paymentDate = payment.paid_date ? new Date(payment.paid_date) : new Date(payment.created_at);
-        return paymentDate.getMonth() === currentMonth && 
-               paymentDate.getFullYear() === currentYear &&
-               payment.status === 'paid';
+        const isCurrentMonth = paymentDate.getMonth() === currentMonth && 
+                              paymentDate.getFullYear() === currentYear &&
+                              payment.status === 'paid';
+        
+        if (isCurrentMonth) {
+          console.log('💰 Debug - Pagamento do mês atual:', {
+            amount: payment.amount,
+            status: payment.status,
+            paid_date: payment.paid_date,
+            created_at: payment.created_at,
+            paymentDate: paymentDate
+          });
+        }
+        
+        return isCurrentMonth;
       }) || [];
 
       const monthlyRevenue = currentMonthPayments.reduce((sum, payment) => sum + parseFloat(payment.amount || '0'), 0);
+      console.log('💰 Debug - Receita do mês atual:', monthlyRevenue);
 
       // 6. Calcular crescimento mensal (simplificado)
       const lastMonth = currentMonth === 0 ? 11 : currentMonth - 1;
       const lastMonthYear = currentMonth === 0 ? currentYear - 1 : currentYear;
       
+      console.log('💰 Debug - Mês anterior:', lastMonth, 'Ano anterior:', lastMonthYear);
+      
       const lastMonthPayments = paymentsData?.filter(payment => {
         const paymentDate = payment.paid_date ? new Date(payment.paid_date) : new Date(payment.created_at);
-        return paymentDate.getMonth() === lastMonth && 
-               paymentDate.getFullYear() === lastMonthYear &&
-               payment.status === 'paid';
+        const isLastMonth = paymentDate.getMonth() === lastMonth && 
+                           paymentDate.getFullYear() === lastMonthYear &&
+                           payment.status === 'paid';
+        
+        if (isLastMonth) {
+          console.log('💰 Debug - Pagamento do mês anterior:', {
+            amount: payment.amount,
+            status: payment.status,
+            paid_date: payment.paid_date,
+            created_at: payment.created_at,
+            paymentDate: paymentDate
+          });
+        }
+        
+        return isLastMonth;
       }) || [];
 
       const lastMonthRevenue = lastMonthPayments.reduce((sum, payment) => sum + parseFloat(payment.amount || '0'), 0);
+      console.log('💰 Debug - Receita do mês anterior:', lastMonthRevenue);
+      
       const monthlyGrowth = lastMonthRevenue > 0 ? ((monthlyRevenue - lastMonthRevenue) / lastMonthRevenue) * 100 : 0;
+      console.log('💰 Debug - Crescimento mensal:', monthlyGrowth + '%');
 
       const finalStats = {
         totalUsers,
