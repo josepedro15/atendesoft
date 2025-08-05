@@ -17,6 +17,7 @@ import {
 
 import StatsCard from "./StatsCard";
 import QuickActions from "./QuickActions";
+import { Button } from "@/components/ui/button";
 import {
   MRRCard,
   ARRCard,
@@ -127,6 +128,7 @@ const AdminDashboard = () => {
   const { isAdmin, isLoading, isInitialized } = useAuth();
   const { stats, loading: dashboardLoading, error } = useDashboard();
   const navigate = useNavigate();
+  const [showKPIs, setShowKPIs] = useState(false);
 
   // Debug: Log do estado do useAuth
   console.log('🔍 AdminDashboard - useAuth state:', { isAdmin, isLoading, isInitialized });
@@ -205,7 +207,7 @@ const AdminDashboard = () => {
         ))}
       </div>
 
-      {/* Seção KPI Avançados */}
+      {/* Seção KPI Avançados - Lazy Load */}
       <div className="space-y-6">
         <div className="text-center lg:text-left">
           <h2 className="text-3xl font-bold text-glow text-primary">
@@ -216,35 +218,51 @@ const AdminDashboard = () => {
           </p>
         </div>
 
-        {/* MRR e ARR */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <MRRCard />
-          <ARRCard />
+        {/* Botão para carregar KPIs */}
+        <div className="text-center">
+          <Button 
+            onClick={() => setShowKPIs(true)}
+            className="px-8 py-3 text-lg"
+            disabled={showKPIs}
+          >
+            {showKPIs ? 'KPIs Carregados' : 'Carregar KPIs Avançados'}
+          </Button>
         </div>
 
-        {/* Churn & Retenção e LTV/CAC */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <ChurnRetentionCard />
-          <LTVCACCard />
-        </div>
-
-        {/* Bloco Financeiro */}
-        <div className="space-y-6">
-          <h3 className="text-2xl font-bold text-primary">Financeiro</h3>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {/* Despesas Fixas */}
-            <DespesasFixasCard />
-            
-            {/* Despesas Variáveis */}
-            <DespesasVariaveisCard />
-            
-            {/* Previsão de Caixa */}
-            <div className="lg:col-span-2">
-              <PrevisaoCaixaCard />
+        {/* KPIs carregados condicionalmente */}
+        {showKPIs && (
+          <>
+            {/* MRR e ARR */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <MRRCard />
+              <ARRCard />
             </div>
-          </div>
-        </div>
+
+            {/* Churn & Retenção e LTV/CAC */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <ChurnRetentionCard />
+              <LTVCACCard />
+            </div>
+
+            {/* Bloco Financeiro */}
+            <div className="space-y-6">
+              <h3 className="text-2xl font-bold text-primary">Financeiro</h3>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                {/* Despesas Fixas */}
+                <DespesasFixasCard />
+                
+                {/* Despesas Variáveis */}
+                <DespesasVariaveisCard />
+                
+                {/* Previsão de Caixa */}
+                <div className="lg:col-span-2">
+                  <PrevisaoCaixaCard />
+                </div>
+              </div>
+            </div>
+          </>
+        )}
       </div>
 
       {/* Ações Rápidas */}
