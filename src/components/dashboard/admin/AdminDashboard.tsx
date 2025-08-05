@@ -19,14 +19,14 @@ import StatsCard from "./StatsCard";
 import QuickActions from "./QuickActions";
 import { Button } from "@/components/ui/button";
 import {
-  MRRCard,
-  ARRCard,
-  ChurnRetentionCard,
-  LTVCACCard,
-  DespesasFixasCard,
-  DespesasVariaveisCard,
-  PrevisaoCaixaCard
-} from "./AdvancedKPICards";
+  LazyMRRCard,
+  LazyARRCard,
+  LazyChurnRetentionCard,
+  LazyLTVCACCard,
+  LazyDespesasFixasCard,
+  LazyDespesasVariaveisCard,
+  LazyPrevisaoCaixaCard
+} from "./LazyKPICards";
 
 // Função para formatar valores monetários
 const formatCurrency = (value: number) => {
@@ -250,39 +250,39 @@ const AdminDashboard = () => {
           </p>
         </div>
 
-        {/* KPIs carregados condicionalmente */}
+                {/* KPIs carregados condicionalmente - Lazy Loading Individual */}
         {showKPIs && (
           <>
             <div className="text-center p-4 bg-green-500/10 border border-green-500/20 rounded-lg">
               <p className="text-green-500 font-medium">KPIs carregados com sucesso!</p>
             </div>
-            
-            {/* MRR e ARR */}
+
+            {/* MRR e ARR - Lazy Loading */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <MRRCard />
-              <ARRCard />
+              <LazyMRRCard />
+              <LazyARRCard />
             </div>
 
-            {/* Churn & Retenção e LTV/CAC */}
+            {/* Churn & Retenção e LTV/CAC - Lazy Loading */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <ChurnRetentionCard />
-              <LTVCACCard />
+              <LazyChurnRetentionCard />
+              <LazyLTVCACCard />
             </div>
 
-            {/* Bloco Financeiro */}
+            {/* Bloco Financeiro - Lazy Loading */}
             <div className="space-y-6">
               <h3 className="text-2xl font-bold text-primary">Financeiro</h3>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 {/* Despesas Fixas */}
-                <DespesasFixasCard />
-                
+                <LazyDespesasFixasCard />
+
                 {/* Despesas Variáveis */}
-                <DespesasVariaveisCard />
-                
+                <LazyDespesasVariaveisCard />
+
                 {/* Previsão de Caixa */}
                 <div className="lg:col-span-2">
-                  <PrevisaoCaixaCard />
+                  <LazyPrevisaoCaixaCard />
                 </div>
               </div>
             </div>
