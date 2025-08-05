@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { CheckCircle, Clock, Play, Edit, Plus, Users, GitBranch, RefreshCw } from "lucide-react";
+import { CheckCircle, Clock, Play, Edit, Plus, Users, GitBranch, RefreshCw, ChevronDown, ChevronRight, Info, Settings } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -87,6 +87,8 @@ const AdminImplementation = () => {
   const [loading, setLoading] = useState(true);
   const [loadingUsers, setLoadingUsers] = useState(false);
   const [dataFetched, setDataFetched] = useState(false);
+  const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set());
+  const [showDetailsDialog, setShowDetailsDialog] = useState<string | null>(null);
   const { toast } = useToast();
   const { isAdmin, isInitialized } = useAuth();
 
@@ -444,6 +446,20 @@ const AdminImplementation = () => {
     return Math.round((completedSteps / steps.length) * 100);
   };
 
+  const toggleCardExpansion = (clientId: string) => {
+    setExpandedCards(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(clientId)) {
+        newSet.delete(clientId);
+      } else {
+        newSet.add(clientId);
+      }
+      return newSet;
+    });
+  };
+
+  const isCardExpanded = (clientId: string) => expandedCards.has(clientId);
+
   // Verificar se é admin
   if (!isAdmin) {
     return (
@@ -536,49 +552,93 @@ const AdminImplementation = () => {
             <Card key={client.user_id} className="card-glass">
               <CardHeader>
                 <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="text-xl">{client.full_name}</CardTitle>
-                    <CardDescription>{client.company}</CardDescription>
-                    <p className="text-sm text-muted-foreground mt-1">{client.email}</p>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-2xl font-bold text-primary">
-                      {getProgressPercentage(client)}%
+                  <div className="flex items-center gap-4">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => toggleCardExpansion(client.user_id)}
+                      className="p-1 h-8 w-8"
+                    >
+                      {isCardExpanded(client.user_id) ? (
+                        <ChevronDown className="h-4 w-4" />
+                      ) : (
+                        <ChevronRight className="h-4 w-4" />
+                      )}
+                    </Button>
+                    <div>
+                      <CardTitle className="text-xl">{client.full_name}</CardTitle>
+                      <CardDescription>{client.company}</CardDescription>
+                      <p className="text-sm text-muted-foreground mt-1">{client.email}</p>
                     </div>
-                    <div className="text-sm text-muted-foreground">Progresso Geral</div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="text-right">
+                      <div className="text-2xl font-bold text-primary">
+                        {getProgressPercentage(client)}%
+                      </div>
+                      <div className="text-sm text-muted-foreground">Progresso Geral</div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setShowDetailsDialog(client.user_id)}
+                        className="flex items-center gap-2"
+                      >
+                        <Info className="h-4 w-4" />
+                        Detalhes
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setShowDetailsDialog(client.user_id)}
+                        className="flex items-center gap-2"
+                      >
+                        <Settings className="h-4 w-4" />
+                        Configurar
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {steps.map((step) => {
-                    const progress = client.progress.find(p => p.step_id === step.id);
-                    const status = progress?.status || 'pending';
-                    
-                    return (
-                      <div key={step.id} className="flex items-center justify-between p-3 rounded-lg border border-border/50">
-                        <div className="flex items-center gap-3">
-                          {getStatusIcon(status)}
-                          <div>
-                            <h4 className="font-medium">{step.title}</h4>
-                            <p className="text-sm text-muted-foreground">{step.description}</p>
+              
+              {isCardExpanded(client.user_id) && (
+                <CardContent>
+                  <div className="space-y-4">
+                    {steps.map((step) => {
+                      const progress = client.progress.find(p => p.step_id === step.id);
+                      const status = progress?.status || 'pending';
+                      
+                      return (
+                        <div key={step.id} className="flex items-center justify-between p-3 rounded-lg border border-border/50">
+                          <div className="flex items-center gap-3">
+                            {getStatusIcon(status)}
+                            <div>
+                              <h4 className="font-medium">{step.title}</h4>
+                              <p className="text-sm text-muted-foreground">{step.description}</p>
+                              {progress?.notes && (
+                                <p className="text-xs text-muted-foreground mt-1 italic">
+                                  "{progress.notes}"
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            {getStatusBadge(status)}
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setEditingProgress(progress || { id: 'new', user_id: client.user_id, step_id: step.id, status: 'pending', step } as UserProgress)}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
                           </div>
                         </div>
-                        <div className="flex items-center gap-3">
-                          {getStatusBadge(status)}
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setEditingProgress(progress || { id: 'new', user_id: client.user_id, step_id: step.id, status: 'pending', step } as UserProgress)}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </CardContent>
+                      );
+                    })}
+                  </div>
+                </CardContent>
+              )}
             </Card>
           ))}
         </div>
@@ -705,6 +765,112 @@ const AdminImplementation = () => {
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog para detalhes da implementação */}
+      <Dialog open={!!showDetailsDialog} onOpenChange={() => setShowDetailsDialog(null)}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Detalhes da Implementação</DialogTitle>
+          </DialogHeader>
+          {showDetailsDialog && (() => {
+            const client = clients.find(c => c.user_id === showDetailsDialog);
+            if (!client) return null;
+            
+            return (
+              <div className="space-y-6">
+                {/* Informações do Cliente */}
+                <div className="bg-muted/20 rounded-lg p-4">
+                  <h3 className="font-semibold mb-3">Informações do Cliente</h3>
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <span className="font-medium">Nome:</span> {client.full_name}
+                    </div>
+                    <div>
+                      <span className="font-medium">Empresa:</span> {client.company}
+                    </div>
+                    <div>
+                      <span className="font-medium">Email:</span> {client.email}
+                    </div>
+                    <div>
+                      <span className="font-medium">Progresso Geral:</span> {getProgressPercentage(client)}%
+                    </div>
+                  </div>
+                </div>
+
+                {/* Resumo das Etapas */}
+                <div>
+                  <h3 className="font-semibold mb-3">Resumo das Etapas</h3>
+                  <div className="space-y-3">
+                    {steps.map((step) => {
+                      const progress = client.progress.find(p => p.step_id === step.id);
+                      const status = progress?.status || 'pending';
+                      
+                      return (
+                        <div key={step.id} className="flex items-center justify-between p-3 rounded-lg border">
+                          <div className="flex items-center gap-3">
+                            {getStatusIcon(status)}
+                            <div>
+                              <h4 className="font-medium">{step.title}</h4>
+                              <p className="text-sm text-muted-foreground">{step.description}</p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            {getStatusBadge(status)}
+                            {progress?.started_at && (
+                              <div className="text-xs text-muted-foreground">
+                                Iniciado: {new Date(progress.started_at).toLocaleDateString('pt-BR')}
+                              </div>
+                            )}
+                            {progress?.completed_at && (
+                              <div className="text-xs text-muted-foreground">
+                                Concluído: {new Date(progress.completed_at).toLocaleDateString('pt-BR')}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Observações */}
+                {client.progress.some(p => p.notes) && (
+                  <div>
+                    <h3 className="font-semibold mb-3">Observações</h3>
+                    <div className="space-y-2">
+                      {client.progress
+                        .filter(p => p.notes)
+                        .map((progress) => (
+                          <div key={progress.id} className="bg-muted/20 rounded-lg p-3">
+                            <div className="font-medium text-sm mb-1">
+                              {steps.find(s => s.id === progress.step_id)?.title}
+                            </div>
+                            <p className="text-sm text-muted-foreground">{progress.notes}</p>
+                          </div>
+                        ))}
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex justify-end gap-2">
+                  <Button variant="outline" onClick={() => setShowDetailsDialog(null)}>
+                    Fechar
+                  </Button>
+                  <Button onClick={() => {
+                    setShowDetailsDialog(null);
+                    // Expandir o card automaticamente
+                    if (!isCardExpanded(client.user_id)) {
+                      toggleCardExpansion(client.user_id);
+                    }
+                  }}>
+                    Editar Implementação
+                  </Button>
+                </div>
+              </div>
+            );
+          })()}
         </DialogContent>
       </Dialog>
     </div>
