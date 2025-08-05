@@ -755,7 +755,7 @@ const AdminImplementation = () => {
                                   <p className="text-sm text-muted-foreground">{step.description}</p>
                                   {progress?.notes && (
                                     <p className="text-xs text-muted-foreground mt-1 italic">
-                                      "{progress.notes}"
+                                      {progress.notes}
                                     </p>
                                   )}
                                 </div>
