@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -55,6 +55,10 @@ const Sparkline = ({ data }: { data: number[] }) => {
 export const MRRCard = () => {
   const { advancedKPIs, loading } = useAdvancedKPIs();
   const { mrr } = advancedKPIs;
+  
+  // Memoizar para evitar re-renders desnecessários
+  const memoizedValue = React.useMemo(() => formatCurrency(mrr.current), [mrr.current]);
+  const memoizedGrowth = React.useMemo(() => mrr.growth, [mrr.growth]);
   
   if (loading) {
     return (
