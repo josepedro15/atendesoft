@@ -36,6 +36,7 @@ export const useDashboard = () => {
 
   const fetchDashboardStats = async () => {
     console.log('🚀 useDashboard: Iniciando busca de estatísticas...');
+    console.log('🔍 Debug: Hook useDashboard executado!');
     try {
       setLoading(true);
       setError(null);
@@ -195,7 +196,7 @@ export const useDashboard = () => {
       const lastMonthRevenue = lastMonthPayments.reduce((sum, p) => sum + parseFloat(p.amount || '0'), 0);
       const monthlyGrowth = lastMonthRevenue > 0 ? ((monthlyRevenue - lastMonthRevenue) / lastMonthRevenue) * 100 : 0;
 
-      setStats({
+      const finalStats = {
         totalUsers,
         activeUsers,
         totalPayments,
@@ -208,7 +209,10 @@ export const useDashboard = () => {
         activeImplementations,
         monthlyRevenue,
         monthlyGrowth
-      });
+      };
+
+      console.log('📊 useDashboard: Estatísticas finais calculadas:', finalStats);
+      setStats(finalStats);
 
     } catch (err) {
       console.error('Erro ao buscar estatísticas do dashboard:', err);
