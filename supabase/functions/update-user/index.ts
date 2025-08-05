@@ -73,8 +73,8 @@ Deno.serve(async (req) => {
     }
 
     // Atualizar profile
-    console.log('Updating profile for user:', userId)
-    const { error: profileError } = await supabaseClient
+    console.log('Updating profile for user:', userId, 'with data:', { full_name, company, phone });
+    const { data: profileData, error: profileError } = await supabaseClient
       .from('profiles')
       .upsert({
         user_id: userId,
@@ -82,6 +82,7 @@ Deno.serve(async (req) => {
         company,
         phone
       })
+      .select()
 
     if (profileError) {
       console.error('Error updating profile:', profileError)
@@ -90,16 +91,17 @@ Deno.serve(async (req) => {
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
-    console.log('Profile updated successfully')
+    console.log('Profile updated successfully:', profileData)
 
     // Atualizar role
-    console.log('Updating role for user:', userId, 'to:', role)
-    const { error: roleError } = await supabaseClient
+    console.log('Updating role for user:', userId, 'to:', role);
+    const { data: roleData, error: roleError } = await supabaseClient
       .from('user_roles')
       .upsert({
         user_id: userId,
         role: role || 'user'
       })
+      .select()
 
     if (roleError) {
       console.error('Error updating role:', roleError)
@@ -108,7 +110,7 @@ Deno.serve(async (req) => {
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
-    console.log('Role updated successfully')
+    console.log('Role updated successfully:', roleData)
 
     return new Response(
       JSON.stringify({ success: true }),
