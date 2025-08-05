@@ -32,13 +32,13 @@ const formatCurrency = (value: number) => {
 const generateStats = (stats: any) => [
   {
     id: '1',
-    title: 'Clientes Ativos',
+    title: 'Usuários Cadastrados',
     value: stats.totalUsers,
     description: `+${stats.activeUsers} este mês`,
     icon: <Users className="h-4 w-4" />,
     trend: { value: stats.activeUsers, isPositive: stats.activeUsers > 0 },
     link: '/dashboard/users',
-    linkText: 'Ver todos os clientes'
+    linkText: 'Ver todos os usuários'
   },
   {
     id: '2',
