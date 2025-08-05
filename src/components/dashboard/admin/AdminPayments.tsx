@@ -65,31 +65,53 @@ const AdminPayments = () => {
       console.log('Buscando pagamentos...');
       setLoading(true);
       
-      // Buscar pagamentos com informações do usuário
-      const { data, error } = await supabase
+      // Buscar pagamentos primeiro
+      const { data: paymentsData, error: paymentsError } = await supabase
         .from('payments')
-        .select(`
-          *,
-          profiles(full_name, company)
-        `)
+        .select('*')
         .order('due_date', { ascending: false });
 
-      if (error) {
-        console.error('Erro ao buscar pagamentos:', error);
-        throw error;
+      if (paymentsError) {
+        console.error('Erro ao buscar pagamentos:', paymentsError);
+        throw paymentsError;
       }
 
-      const paymentsData = data || [];
-      console.log('Pagamentos encontrados:', paymentsData.length, paymentsData);
-      setPayments(paymentsData as any);
+      // Buscar perfis dos usuários separadamente
+      if (paymentsData && paymentsData.length > 0) {
+        const userIds = [...new Set(paymentsData.map(p => p.user_id))];
+        const { data: profilesData, error: profilesError } = await supabase
+          .from('profiles')
+          .select('user_id, full_name, company')
+          .in('user_id', userIds);
 
-      // Calcular estatísticas
-      const statsData = {
-        pending: paymentsData.filter((p: any) => p.status === 'pending').reduce((sum: number, p: any) => sum + parseFloat(p.amount), 0),
-        paid: paymentsData.filter((p: any) => p.status === 'paid').reduce((sum: number, p: any) => sum + parseFloat(p.amount), 0),
-        overdue: paymentsData.filter((p: any) => p.status === 'overdue').reduce((sum: number, p: any) => sum + parseFloat(p.amount), 0)
-      };
-      setStats(statsData);
+        if (profilesError) {
+          console.error('Erro ao buscar perfis:', profilesError);
+        } else {
+          // Combinar dados
+          const profilesMap = new Map(profilesData?.map(p => [p.user_id, p]) || []);
+          const enrichedPayments = paymentsData.map(payment => ({
+            ...payment,
+            user_profile: profilesMap.get(payment.user_id) || { full_name: 'Usuário não encontrado', company: 'N/A' }
+          }));
+          
+          console.log('Pagamentos encontrados:', enrichedPayments.length, enrichedPayments);
+          setPayments(enrichedPayments as any);
+          
+          // Calcular estatísticas
+          const statsData = {
+            pending: enrichedPayments.filter((p: any) => p.status === 'pending').reduce((sum: number, p: any) => sum + parseFloat(p.amount), 0),
+            paid: enrichedPayments.filter((p: any) => p.status === 'paid').reduce((sum: number, p: any) => sum + parseFloat(p.amount), 0),
+            overdue: enrichedPayments.filter((p: any) => p.status === 'overdue').reduce((sum: number, p: any) => sum + parseFloat(p.amount), 0)
+          };
+          setStats(statsData);
+        }
+      } else {
+        console.log('Nenhum pagamento encontrado');
+        setPayments([]);
+        setStats({ pending: 0, paid: 0, overdue: 0 });
+      }
+
+
 
     } catch (error) {
       console.error('Erro ao buscar pagamentos:', error);
