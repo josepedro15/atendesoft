@@ -87,7 +87,14 @@ export const useAuth = () => {
         
         if (currentSession?.user) {
           console.log('User found, fetching data...');
-          await fetchUserData(currentSession.user.id);
+          try {
+            await fetchUserData(currentSession.user.id);
+          } catch (fetchError) {
+            console.error('Error fetching user data:', fetchError);
+            // Mesmo com erro ao buscar dados, o usuário está autenticado
+            setProfile(null);
+            setUserRole('user');
+          }
         } else {
           console.log('No user found, setting defaults...');
           setProfile(null);
@@ -120,7 +127,14 @@ export const useAuth = () => {
         
         if (newSession?.user) {
           console.log('New user session, fetching data...');
-          await fetchUserData(newSession.user.id);
+          try {
+            await fetchUserData(newSession.user.id);
+          } catch (fetchError) {
+            console.error('Error fetching user data in listener:', fetchError);
+            // Mesmo com erro ao buscar dados, o usuário está autenticado
+            setProfile(null);
+            setUserRole('user');
+          }
         } else {
           console.log('No user session, clearing data...');
           setProfile(null);
@@ -143,7 +157,7 @@ export const useAuth = () => {
         setIsLoading(false);
         setIsInitialized(true);
       }
-    }, 5000); // 5 segundos
+    }, 3000); // 3 segundos
 
     return () => {
       mounted = false;
