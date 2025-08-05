@@ -185,7 +185,15 @@ export const useDashboard = () => {
       console.log('💰 Debug - Mês atual:', currentMonth, 'Ano atual:', currentYear);
       
       const currentMonthPayments = paymentsData?.filter(payment => {
-        const paymentDate = payment.paid_date ? new Date(payment.paid_date) : new Date(payment.created_at);
+        // Corrigir interpretação de data para evitar problemas de fuso horário
+        let paymentDate;
+        if (payment.paid_date) {
+          const [year, month, day] = payment.paid_date.split('-').map(Number);
+          paymentDate = new Date(year, month - 1, day);
+        } else {
+          paymentDate = new Date(payment.created_at);
+        }
+        
         const isCurrentMonth = paymentDate.getMonth() === currentMonth && 
                               paymentDate.getFullYear() === currentYear &&
                               payment.status === 'paid';
@@ -215,7 +223,16 @@ export const useDashboard = () => {
       // Debug: Verificar todos os pagamentos para entender a distribuição
       console.log('💰 Debug - Todos os pagamentos disponíveis:');
       paymentsData?.forEach(payment => {
-        const paymentDate = payment.paid_date ? new Date(payment.paid_date) : new Date(payment.created_at);
+        // Corrigir interpretação de data para evitar problemas de fuso horário
+        let paymentDate;
+        if (payment.paid_date) {
+          // Para paid_date, usar apenas a data (YYYY-MM-DD) sem fuso horário
+          const [year, month, day] = payment.paid_date.split('-').map(Number);
+          paymentDate = new Date(year, month - 1, day); // month - 1 porque getMonth() retorna 0-11
+        } else {
+          paymentDate = new Date(payment.created_at);
+        }
+        
         console.log('💰 Debug - Pagamento:', {
           amount: payment.amount,
           status: payment.status,
@@ -228,7 +245,15 @@ export const useDashboard = () => {
       });
       
       const lastMonthPayments = paymentsData?.filter(payment => {
-        const paymentDate = payment.paid_date ? new Date(payment.paid_date) : new Date(payment.created_at);
+        // Corrigir interpretação de data para evitar problemas de fuso horário
+        let paymentDate;
+        if (payment.paid_date) {
+          const [year, month, day] = payment.paid_date.split('-').map(Number);
+          paymentDate = new Date(year, month - 1, day);
+        } else {
+          paymentDate = new Date(payment.created_at);
+        }
+        
         const isLastMonth = paymentDate.getMonth() === lastMonth && 
                            paymentDate.getFullYear() === lastMonthYear &&
                            payment.status === 'paid';
