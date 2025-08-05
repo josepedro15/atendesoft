@@ -8,11 +8,11 @@ EXCEPTION
     WHEN duplicate_object THEN null;
 END $$;
 
--- 2. Drop existing has_role function if it exists
-DROP FUNCTION IF EXISTS has_role(UUID, app_role);
-DROP FUNCTION IF EXISTS has_role(uuid, app_role);
-DROP FUNCTION IF EXISTS has_role(UUID, text);
-DROP FUNCTION IF EXISTS has_role(uuid, text);
+-- 2. Drop existing has_role function if it exists (with CASCADE to remove dependent policies)
+DROP FUNCTION IF EXISTS has_role(UUID, app_role) CASCADE;
+DROP FUNCTION IF EXISTS has_role(uuid, app_role) CASCADE;
+DROP FUNCTION IF EXISTS has_role(UUID, text) CASCADE;
+DROP FUNCTION IF EXISTS has_role(uuid, text) CASCADE;
 
 -- 3. Create has_role function
 CREATE OR REPLACE FUNCTION has_role(user_id UUID, role_name app_role)
@@ -31,18 +31,8 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 GRANT EXECUTE ON FUNCTION has_role(UUID, app_role) TO authenticated;
 GRANT EXECUTE ON FUNCTION has_role(UUID, app_role) TO anon;
 
--- 5. Drop existing problematic policies
-DROP POLICY IF EXISTS "Admins can view all profiles" ON profiles;
-DROP POLICY IF EXISTS "Admins can manage all profiles" ON profiles;
-DROP POLICY IF EXISTS "Admins can view all roles" ON user_roles;
-DROP POLICY IF EXISTS "Admins can manage all roles" ON user_roles;
-DROP POLICY IF EXISTS "Admins can view all progress" ON user_implementation_progress;
-DROP POLICY IF EXISTS "Admins can manage progress" ON user_implementation_progress;
-DROP POLICY IF EXISTS "Admins can view all payments" ON payments;
-DROP POLICY IF EXISTS "Admins can manage payments" ON payments;
-DROP POLICY IF EXISTS "Admins can view all contracts" ON contract_files;
-DROP POLICY IF EXISTS "Admins can manage contracts" ON contract_files;
-DROP POLICY IF EXISTS "Admins can manage implementation steps" ON implementation_steps;
+-- 5. Drop existing problematic policies (all policies were dropped by CASCADE, but let's be explicit)
+-- Note: All policies that depend on has_role were automatically dropped by CASCADE
 
 -- 6. Recreate policies with proper has_role function
 CREATE POLICY "Admins can view all profiles" 
@@ -97,6 +87,32 @@ USING (has_role(auth.uid(), 'admin'::app_role));
 
 CREATE POLICY "Admins can manage implementation steps" 
 ON implementation_steps 
+FOR ALL 
+USING (has_role(auth.uid(), 'admin'::app_role));
+
+-- Additional policies for other tables mentioned in the error
+CREATE POLICY "Admins can view all contracts" 
+ON contracts 
+FOR SELECT 
+USING (has_role(auth.uid(), 'admin'::app_role));
+
+CREATE POLICY "Admins can update contracts" 
+ON contracts 
+FOR UPDATE 
+USING (has_role(auth.uid(), 'admin'::app_role));
+
+CREATE POLICY "Admins can view all client services" 
+ON client_services 
+FOR SELECT 
+USING (has_role(auth.uid(), 'admin'::app_role));
+
+CREATE POLICY "Admins can manage client services" 
+ON client_services 
+FOR ALL 
+USING (has_role(auth.uid(), 'admin'::app_role));
+
+CREATE POLICY "Admins can manage services" 
+ON services 
 FOR ALL 
 USING (has_role(auth.uid(), 'admin'::app_role));
 
