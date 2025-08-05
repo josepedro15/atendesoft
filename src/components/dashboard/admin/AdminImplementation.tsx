@@ -6,7 +6,6 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CheckCircle, Clock, Play, Edit, Plus, Users, GitBranch, RefreshCw, ChevronDown, ChevronRight, Info, Settings } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
@@ -87,7 +86,6 @@ const AdminImplementation = () => {
   const [selectedUserId, setSelectedUserId] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [loadingUsers, setLoadingUsers] = useState(false);
-  const [dataFetched, setDataFetched] = useState(false);
   const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set());
   const [showDetailsDialog, setShowDetailsDialog] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('in-progress');
@@ -102,20 +100,13 @@ const AdminImplementation = () => {
   // Buscar usuários disponíveis sempre que o modal abrir
   useEffect(() => {
     if (showAddClientDialog) {
-      console.log('🔄 Modal aberto via useEffect, buscando usuários...');
       fetchAvailableUsers();
     }
   }, [showAddClientDialog]);
 
-  // Monitorar mudanças na aba ativa
-  useEffect(() => {
-    console.log('🔄 Aba alterada via useEffect:', activeTab);
-  }, [activeTab]);
-
   const fetchData = async () => {
     try {
       setLoading(true);
-      console.log('🔄 Buscando dados de implementação...');
       
       // Buscar etapas de implementação do banco
       const { data: stepsData, error: stepsError } = await supabase
@@ -124,11 +115,8 @@ const AdminImplementation = () => {
         .order('step_number');
 
       if (stepsError) {
-        console.error('❌ Erro ao buscar etapas:', stepsError);
-        // Usar etapas padrão se não houver no banco
         setSteps(defaultSteps);
       } else {
-        console.log('📋 Etapas encontradas:', stepsData?.length || 0);
         setSteps(stepsData || defaultSteps);
       }
 
@@ -141,10 +129,8 @@ const AdminImplementation = () => {
         `);
 
       if (progressError) {
-        console.error('❌ Erro ao buscar progresso:', progressError);
         setClients([]);
       } else {
-        console.log('📊 Progresso encontrado:', progressData?.length || 0);
         // Agrupar progresso por usuário
         const progressByUser = new Map<string, UserProgress[]>();
         (progressData || []).forEach((progress: any) => {
@@ -171,11 +157,9 @@ const AdminImplementation = () => {
               progress: progressByUser.get(profile.user_id) || []
             }));
             setClients(clientsWithData);
-            console.log('👥 Clientes com implementação:', clientsWithData.length);
           }
         } else {
           setClients([]);
-          console.log('⚠️ Nenhum cliente com implementação encontrado');
         }
       }
     } catch (error) {
@@ -193,31 +177,25 @@ const AdminImplementation = () => {
   const fetchAvailableUsers = async () => {
     try {
       setLoadingUsers(true);
-      console.log('🔄 Buscando usuários disponíveis...');
       
-      // Buscar todos os usuários que não têm implementação
       const { data: profilesData, error: profilesError } = await supabase
         .from('profiles')
         .select('user_id, full_name, company');
 
       if (profilesError) {
-        console.error('❌ Erro ao buscar perfis:', profilesError);
         setAvailableUsers([]);
         return;
       }
 
-      // Buscar usuários que já têm implementação
       const { data: existingProgress, error: progressError } = await supabase
         .from('user_implementation_progress')
         .select('user_id');
 
       if (progressError) {
-        console.error('❌ Erro ao buscar progresso existente:', progressError);
         setAvailableUsers([]);
         return;
       }
 
-      // Filtrar usuários que não têm implementação
       const usersWithImplementation = new Set(existingProgress?.map(p => p.user_id) || []);
       const availableUsersData = (profilesData || [])
         .filter(profile => !usersWithImplementation.has(profile.user_id))
@@ -229,7 +207,6 @@ const AdminImplementation = () => {
         }));
 
       setAvailableUsers(availableUsersData);
-      console.log('👥 Usuários disponíveis:', availableUsersData.length);
     } catch (error) {
       console.error('❌ Erro ao buscar usuários disponíveis:', error);
       setAvailableUsers([]);
@@ -249,9 +226,6 @@ const AdminImplementation = () => {
     }
 
     try {
-      console.log('🔄 Criando implementação para usuário:', selectedUserId);
-      
-      // Criar progresso de implementação para todas as etapas
       const progressEntries = steps.map(step => ({
         user_id: selectedUserId,
         step_id: step.id,
@@ -272,9 +246,7 @@ const AdminImplementation = () => {
       setShowAddClientDialog(false);
       setSelectedUserId('');
       
-      // Recarregar dados
       await fetchData();
-      // Recarregar usuários disponíveis após um pequeno delay
       setTimeout(() => {
         fetchAvailableUsers();
       }, 500);
@@ -290,15 +262,7 @@ const AdminImplementation = () => {
 
   const updateProgress = async (progressId: string, data: Partial<UserProgress>) => {
     try {
-      console.log('🔄 === ATUALIZANDO PROGRESSO ===');
-      console.log('📝 Progress ID:', progressId);
-      console.log('📊 Dados para atualizar:', data);
-      console.log('🔑 Tipo do progressId:', typeof progressId);
-      console.log('🔑 ProgressId é válido:', progressId && progressId !== 'new');
-      
-      // Verificar se o progressId é válido
       if (!progressId || progressId === 'new') {
-        console.error('❌ Progress ID inválido:', progressId);
         toast({
           title: "Erro",
           description: "ID de progresso inválido",
@@ -307,18 +271,6 @@ const AdminImplementation = () => {
         return;
       }
       
-      // Verificar se os dados são válidos
-      if (!data || Object.keys(data).length === 0) {
-        console.error('❌ Dados inválidos:', data);
-        toast({
-          title: "Erro",
-          description: "Dados inválidos para atualização",
-          variant: "destructive"
-        });
-        return;
-      }
-      
-      // REMOVER CAMPOS INVÁLIDOS - apenas campos que existem na tabela
       const validData = {
         status: data.status,
         notes: data.notes,
@@ -326,39 +278,25 @@ const AdminImplementation = () => {
         completed_at: data.completed_at
       };
       
-      // Remover campos undefined/null
       Object.keys(validData).forEach(key => {
         if (validData[key as keyof typeof validData] === undefined || validData[key as keyof typeof validData] === null) {
           delete validData[key as keyof typeof validData];
         }
       });
       
-      console.log('✅ Dados limpos para atualização:', validData);
-      
-      const { data: updateResult, error } = await supabase
+      const { error } = await supabase
         .from('user_implementation_progress')
         .update(validData)
-        .eq('id', progressId)
-        .select();
+        .eq('id', progressId);
 
-      console.log('✅ Resultado da atualização:', updateResult);
-      console.log('❌ Erro da atualização:', error);
+      if (error) throw error;
 
-      if (error) {
-        console.error('❌ Erro ao atualizar:', error);
-        throw error;
-      }
-
-      console.log('✅ Atualização bem-sucedida!');
       toast({
         title: "Progresso Atualizado",
         description: "O status da implementação foi atualizado com sucesso",
       });
 
-      // Recarregar dados
-      console.log('🔄 Recarregando dados...');
       await fetchData();
-      console.log('✅ Dados recarregados!');
     } catch (error) {
       console.error('❌ Erro ao atualizar progresso:', error);
       toast({
@@ -402,47 +340,31 @@ const AdminImplementation = () => {
   const clientsCompleted = clients.filter(client => getProgressPercentage(client) === 100);
 
   const toggleCardExpansion = (clientId: string) => {
-    console.log('🔄 Toggle card expansion chamado para:', clientId);
     setExpandedCards(prev => {
       const newSet = new Set(prev);
       if (newSet.has(clientId)) {
         newSet.delete(clientId);
-        console.log('📂 Card colapsado:', clientId);
       } else {
         newSet.add(clientId);
-        console.log('📂 Card expandido:', clientId);
       }
-      console.log('📂 Estado atual dos cards expandidos:', Array.from(newSet));
       return newSet;
     });
   };
 
   const isCardExpanded = (clientId: string) => expandedCards.has(clientId);
 
-  // Handler específico para o botão Configurar
   const handleConfigurarClick = (clientId: string) => {
-    console.log('🔍 Botão Configurar clicado para:', clientId);
     toggleCardExpansion(clientId);
   };
 
-  // Handler específico para o botão Detalhes
   const handleDetalhesClick = (clientId: string) => {
-    console.log('🔍 Botão Detalhes clicado para:', clientId);
     setShowDetailsDialog(clientId);
   };
 
-  // Handler para mudança de aba
   const handleTabChange = (value: string) => {
     console.log('🔍 Mudando aba para:', value);
-    console.log('🔍 Estado anterior:', activeTab);
-    console.log('🔍 Novo estado:', value);
     setActiveTab(value);
   };
-
-  // Debug: Log do estado atual das abas
-  console.log('🔍 Estado atual da aba:', activeTab);
-  console.log('🔍 Clientes em andamento:', clientsInProgress.length);
-  console.log('🔍 Clientes concluídos:', clientsCompleted.length);
 
   // Verificar se é admin
   if (!isAdmin) {
@@ -492,7 +414,6 @@ const AdminImplementation = () => {
           </div>
           <Button
             onClick={() => {
-              console.log('🔄 Forçando atualização de dados...');
               fetchData();
               fetchAvailableUsers();
             }}
@@ -512,7 +433,7 @@ const AdminImplementation = () => {
         </div>
       </div>
 
-      {/* Abas de Implementações - Versão com Botões */}
+      {/* Abas de Implementações */}
       <div className="w-full">
         <div className="grid w-full grid-cols-2 gap-2 mb-6">
           <Button
@@ -533,9 +454,9 @@ const AdminImplementation = () => {
           </Button>
         </div>
 
-        {/* Conteúdo da aba Em Andamento */}
+        {/* Conteúdo das Abas */}
         {activeTab === 'in-progress' && (
-          <div className="mt-6">
+          <div>
             {loading ? (
               <div className="flex items-center justify-center p-8">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
@@ -557,231 +478,227 @@ const AdminImplementation = () => {
             ) : (
               <div className="grid gap-6">
                 {clientsInProgress.map((client) => (
-                <Card key={client.user_id} className="card-glass">
-                  <CardHeader>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-4">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => toggleCardExpansion(client.user_id)}
-                          className="p-1 h-8 w-8"
-                        >
-                          {isCardExpanded(client.user_id) ? (
-                            <ChevronDown className="h-4 w-4" />
-                          ) : (
-                            <ChevronRight className="h-4 w-4" />
-                          )}
-                        </Button>
-                        <div>
-                          <CardTitle className="text-xl">{client.full_name}</CardTitle>
-                          <CardDescription>{client.company}</CardDescription>
-                          <p className="text-sm text-muted-foreground mt-1">{client.email}</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <div className="text-right">
-                          <div className="text-2xl font-bold text-primary">
-                            {getProgressPercentage(client)}%
+                  <Card key={client.user_id} className="card-glass">
+                    <CardHeader>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => toggleCardExpansion(client.user_id)}
+                            className="p-1 h-8 w-8"
+                          >
+                            {isCardExpanded(client.user_id) ? (
+                              <ChevronDown className="h-4 w-4" />
+                            ) : (
+                              <ChevronRight className="h-4 w-4" />
+                            )}
+                          </Button>
+                          <div>
+                            <CardTitle className="text-xl">{client.full_name}</CardTitle>
+                            <CardDescription>{client.company}</CardDescription>
+                            <p className="text-sm text-muted-foreground mt-1">{client.email}</p>
                           </div>
-                          <div className="text-sm text-muted-foreground">Progresso Geral</div>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleDetalhesClick(client.user_id)}
-                            className="flex items-center gap-2"
-                          >
-                            <Info className="h-4 w-4" />
-                            Detalhes
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleConfigurarClick(client.user_id)}
-                            className="flex items-center gap-2"
-                          >
-                            <Settings className="h-4 w-4" />
-                            Configurar
-                          </Button>
+                        <div className="flex items-center gap-3">
+                          <div className="text-right">
+                            <div className="text-2xl font-bold text-primary">
+                              {getProgressPercentage(client)}%
+                            </div>
+                            <div className="text-sm text-muted-foreground">Progresso Geral</div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleDetalhesClick(client.user_id)}
+                              className="flex items-center gap-2"
+                            >
+                              <Info className="h-4 w-4" />
+                              Detalhes
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleConfigurarClick(client.user_id)}
+                              className="flex items-center gap-2"
+                            >
+                              <Settings className="h-4 w-4" />
+                              Configurar
+                            </Button>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </CardHeader>
-                  
-                  {isCardExpanded(client.user_id) && (
-                    <CardContent>
-                      <div className="space-y-4">
-                        {steps.map((step) => {
-                          const progress = client.progress.find(p => p.step_id === step.id);
-                          const status = progress?.status || 'pending';
-                          
-                          return (
-                            <div key={step.id} className="flex items-center justify-between p-3 rounded-lg border border-border/50">
-                              <div className="flex items-center gap-3">
-                                {getStatusIcon(status)}
-                                <div>
-                                  <h4 className="font-medium">{step.title}</h4>
-                                  <p className="text-sm text-muted-foreground">{step.description}</p>
-                                  {progress?.notes && (
-                                    <p className="text-xs text-muted-foreground mt-1 italic">
-                                      {progress.notes}
-                                    </p>
-                                  )}
+                    </CardHeader>
+                    
+                    {isCardExpanded(client.user_id) && (
+                      <CardContent>
+                        <div className="space-y-4">
+                          {steps.map((step) => {
+                            const progress = client.progress.find(p => p.step_id === step.id);
+                            const status = progress?.status || 'pending';
+                            
+                            return (
+                              <div key={step.id} className="flex items-center justify-between p-3 rounded-lg border border-border/50">
+                                <div className="flex items-center gap-3">
+                                  {getStatusIcon(status)}
+                                  <div>
+                                    <h4 className="font-medium">{step.title}</h4>
+                                    <p className="text-sm text-muted-foreground">{step.description}</p>
+                                    {progress?.notes && (
+                                      <p className="text-xs text-muted-foreground mt-1 italic">
+                                        {progress.notes}
+                                      </p>
+                                    )}
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                  {getStatusBadge(status)}
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => setEditingProgress(progress || { id: 'new', user_id: client.user_id, step_id: step.id, status: 'pending', step } as UserProgress)}
+                                  >
+                                    <Edit className="h-4 w-4" />
+                                  </Button>
                                 </div>
                               </div>
-                              <div className="flex items-center gap-3">
-                                {getStatusBadge(status)}
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => setEditingProgress(progress || { id: 'new', user_id: client.user_id, step_id: step.id, status: 'pending', step } as UserProgress)}
-                                >
-                                  <Edit className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </CardContent>
-                  )}
-                </Card>
-              ))}
-            </div>
-          )}
-        </TabsContent>
+                            );
+                          })}
+                        </div>
+                      </CardContent>
+                    )}
+                  </Card>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
-        <TabsContent value="completed" className="mt-6">
-          {loading ? (
-            <div className="flex items-center justify-center p-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-            </div>
-          ) : clientsCompleted.length === 0 ? (
-            <Card className="card-glass">
-              <CardContent className="p-8">
-                <div className="text-center space-y-4">
-                  <div className="h-16 w-16 rounded-full bg-green-500/10 flex items-center justify-center mx-auto">
-                    <CheckCircle className="h-8 w-8 text-green-500" />
-                  </div>
-                  <h3 className="text-xl font-semibold">Nenhum projeto concluído</h3>
-                  <p className="text-muted-foreground">
-                    Todos os projetos ainda estão em andamento.
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="grid gap-6">
-              {clientsCompleted.map((client) => (
-                <Card key={client.user_id} className="card-glass border-green-500/20">
-                  <CardHeader>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-4">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => toggleCardExpansion(client.user_id)}
-                          className="p-1 h-8 w-8"
-                        >
-                          {isCardExpanded(client.user_id) ? (
-                            <ChevronDown className="h-4 w-4" />
-                          ) : (
-                            <ChevronRight className="h-4 w-4" />
-                          )}
-                        </Button>
-                        <div>
-                          <CardTitle className="text-xl">{client.full_name}</CardTitle>
-                          <CardDescription>{client.company}</CardDescription>
-                          <p className="text-sm text-muted-foreground mt-1">{client.email}</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <div className="text-right">
-                          <div className="text-2xl font-bold text-green-500 flex items-center gap-1">
-                            <CheckCircle className="h-5 w-5" />
-                            100%
-                          </div>
-                          <div className="text-sm text-muted-foreground">Concluído</div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleDetalhesClick(client.user_id)}
-                            className="flex items-center gap-2"
-                          >
-                            <Info className="h-4 w-4" />
-                            Detalhes
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleConfigurarClick(client.user_id)}
-                            className="flex items-center gap-2"
-                          >
-                            <Settings className="h-4 w-4" />
-                            Configurar
-                          </Button>
-                        </div>
-                      </div>
+        {activeTab === 'completed' && (
+          <div>
+            {loading ? (
+              <div className="flex items-center justify-center p-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              </div>
+            ) : clientsCompleted.length === 0 ? (
+              <Card className="card-glass">
+                <CardContent className="p-8">
+                  <div className="text-center space-y-4">
+                    <div className="h-16 w-16 rounded-full bg-green-500/10 flex items-center justify-center mx-auto">
+                      <CheckCircle className="h-8 w-8 text-green-500" />
                     </div>
-                  </CardHeader>
-                  
-                  {isCardExpanded(client.user_id) && (
-                    <CardContent>
-                      <div className="space-y-4">
-                        {steps.map((step) => {
-                          const progress = client.progress.find(p => p.step_id === step.id);
-                          const status = progress?.status || 'pending';
-                          
-                          return (
-                            <div key={step.id} className="flex items-center justify-between p-3 rounded-lg border border-border/50">
-                              <div className="flex items-center gap-3">
-                                {getStatusIcon(status)}
-                                <div>
-                                  <h4 className="font-medium">{step.title}</h4>
-                                  <p className="text-sm text-muted-foreground">{step.description}</p>
-                                  {progress?.notes && (
-                                    <p className="text-xs text-muted-foreground mt-1 italic">
-                                      {progress.notes}
-                                    </p>
-                                  )}
+                    <h3 className="text-xl font-semibold">Nenhum projeto concluído</h3>
+                    <p className="text-muted-foreground">
+                      Todos os projetos ainda estão em andamento.
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="grid gap-6">
+                {clientsCompleted.map((client) => (
+                  <Card key={client.user_id} className="card-glass border-green-500/20">
+                    <CardHeader>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => toggleCardExpansion(client.user_id)}
+                            className="p-1 h-8 w-8"
+                          >
+                            {isCardExpanded(client.user_id) ? (
+                              <ChevronDown className="h-4 w-4" />
+                            ) : (
+                              <ChevronRight className="h-4 w-4" />
+                            )}
+                          </Button>
+                          <div>
+                            <CardTitle className="text-xl">{client.full_name}</CardTitle>
+                            <CardDescription>{client.company}</CardDescription>
+                            <p className="text-sm text-muted-foreground mt-1">{client.email}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <div className="text-right">
+                            <div className="text-2xl font-bold text-green-500 flex items-center gap-1">
+                              <CheckCircle className="h-5 w-5" />
+                              100%
+                            </div>
+                            <div className="text-sm text-muted-foreground">Concluído</div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleDetalhesClick(client.user_id)}
+                              className="flex items-center gap-2"
+                            >
+                              <Info className="h-4 w-4" />
+                              Detalhes
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleConfigurarClick(client.user_id)}
+                              className="flex items-center gap-2"
+                            >
+                              <Settings className="h-4 w-4" />
+                              Configurar
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    
+                    {isCardExpanded(client.user_id) && (
+                      <CardContent>
+                        <div className="space-y-4">
+                          {steps.map((step) => {
+                            const progress = client.progress.find(p => p.step_id === step.id);
+                            const status = progress?.status || 'pending';
+                            
+                            return (
+                              <div key={step.id} className="flex items-center justify-between p-3 rounded-lg border border-border/50">
+                                <div className="flex items-center gap-3">
+                                  {getStatusIcon(status)}
+                                  <div>
+                                    <h4 className="font-medium">{step.title}</h4>
+                                    <p className="text-sm text-muted-foreground">{step.description}</p>
+                                    {progress?.notes && (
+                                      <p className="text-xs text-muted-foreground mt-1 italic">
+                                        {progress.notes}
+                                      </p>
+                                    )}
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                  {getStatusBadge(status)}
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => setEditingProgress(progress || { id: 'new', user_id: client.user_id, step_id: step.id, status: 'pending', step } as UserProgress)}
+                                  >
+                                    <Edit className="h-4 w-4" />
+                                  </Button>
                                 </div>
                               </div>
-                              <div className="flex items-center gap-3">
-                                {getStatusBadge(status)}
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => setEditingProgress(progress || { id: 'new', user_id: client.user_id, step_id: step.id, status: 'pending', step } as UserProgress)}
-                                >
-                                  <Edit className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </CardContent>
-                  )}
-                </Card>
-              ))}
-            </div>
-          )}
-        </TabsContent>
-      </Tabs>
+                            );
+                          })}
+                        </div>
+                      </CardContent>
+                    )}
+                  </Card>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
 
       {/* Dialog para adicionar cliente */}
-      <Dialog open={showAddClientDialog} onOpenChange={(open) => {
-        setShowAddClientDialog(open);
-        if (open) {
-          // Quando o modal abre, buscar usuários disponíveis
-          console.log('🔄 Modal aberto, buscando usuários disponíveis...');
-          fetchAvailableUsers();
-        }
-      }}>
+      <Dialog open={showAddClientDialog} onOpenChange={setShowAddClientDialog}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Adicionar Cliente à Implementação</DialogTitle>
@@ -887,7 +804,6 @@ const AdminImplementation = () => {
             
             return (
               <div className="space-y-6">
-                {/* Informações do Cliente */}
                 <div className="bg-muted/20 rounded-lg p-4">
                   <h3 className="font-semibold mb-3">Informações do Cliente</h3>
                   <div className="grid grid-cols-2 gap-4 text-sm">
@@ -906,7 +822,6 @@ const AdminImplementation = () => {
                   </div>
                 </div>
 
-                {/* Resumo das Etapas */}
                 <div>
                   <h3 className="font-semibold mb-3">Resumo das Etapas</h3>
                   <div className="space-y-3">
@@ -942,7 +857,6 @@ const AdminImplementation = () => {
                   </div>
                 </div>
 
-                {/* Observações */}
                 {client.progress.some(p => p.notes) && (
                   <div>
                     <h3 className="font-semibold mb-3">Observações</h3>
@@ -967,7 +881,6 @@ const AdminImplementation = () => {
                   </Button>
                   <Button onClick={() => {
                     setShowDetailsDialog(null);
-                    // Expandir o card automaticamente
                     if (!isCardExpanded(client.user_id)) {
                       toggleCardExpansion(client.user_id);
                     }
