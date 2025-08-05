@@ -99,28 +99,24 @@ export const useAuth = () => {
         setSession(currentSession);
         setUser(currentSession?.user ?? null);
         
-        // Se há sessão, marcar como inicializado imediatamente
+        // Marcar como inicializado imediatamente
+        setIsLoading(false);
+        setIsInitialized(true);
+        
         if (currentSession?.user) {
-          console.log('User found, marking as initialized immediately');
-          setIsLoading(false);
-          setIsInitialized(true);
+          console.log('User found, fetching additional data...');
           
-          // Buscar dados adicionais em background
-          try {
-            console.log('Fetching additional user data...');
-            await fetchUserData(currentSession.user.id);
-          } catch (fetchError) {
+          // Buscar dados adicionais em background (não bloquear)
+          fetchUserData(currentSession.user.id).catch(fetchError => {
             console.error('Error fetching user data:', fetchError);
             // Mesmo com erro ao buscar dados, o usuário está autenticado
             setProfile(null);
             setUserRole('user');
-          }
+          });
         } else {
           console.log('No user found, setting defaults...');
           setProfile(null);
           setUserRole('user');
-          setIsLoading(false);
-          setIsInitialized(true);
         }
       } catch (error) {
         console.error('Erro ao inicializar auth:', error);
@@ -150,14 +146,14 @@ export const useAuth = () => {
         
         if (newSession?.user) {
           console.log('New user session, fetching additional data...');
-          try {
-            await fetchUserData(newSession.user.id);
-          } catch (fetchError) {
+          
+          // Buscar dados adicionais em background (não bloquear)
+          fetchUserData(newSession.user.id).catch(fetchError => {
             console.error('Error fetching user data in listener:', fetchError);
             // Mesmo com erro ao buscar dados, o usuário está autenticado
             setProfile(null);
             setUserRole('user');
-          }
+          });
         } else {
           console.log('No user session, clearing data...');
           setProfile(null);
@@ -203,7 +199,7 @@ export const useAuth = () => {
   }, [user, fetchUserData]);
 
   const isAdmin = userRole === 'admin';
-  const isAuthenticated = !!user;
+  const isAuthenticated = !!user && !!session;
 
   console.log('useAuth Debug:', {
     user: !!user,
