@@ -473,3 +473,62 @@ export const Constants = {
     },
   },
 } as const
+
+// Tipos para KPIs Avançados
+export interface KPIManualInput {
+  id: string;
+  mes_ref: string;
+  clientes_inicio: number;
+  cancelados: number;
+  renovados: number;
+  ltv?: number;
+  cac?: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface DespesasMes {
+  id: string;
+  mes_ref: string;
+  fixas: number;
+  variaveis: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AdvancedKPIs {
+  mrr: {
+    current: number;
+    previous: number;
+    growth: number;
+    sparkline: number[];
+  };
+  arr: {
+    current: number;
+    previous: number;
+    growth: number;
+    sparkline: number[];
+  };
+  churn: {
+    rate: number;
+    retention: number;
+    hasData: boolean;
+  };
+  ltvCac: {
+    ltv: number;
+    cac: number;
+    ratio: number;
+    hasData: boolean;
+  };
+  despesas: {
+    fixas: number;
+    variaveis: number;
+    total: number;
+    hasData: boolean;
+  };
+  previsaoCaixa: {
+    receitas: number;
+    despesas: number;
+    saldo: number;
+  };
+}

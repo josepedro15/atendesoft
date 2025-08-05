@@ -17,6 +17,15 @@ import {
 
 import StatsCard from "./StatsCard";
 import QuickActions from "./QuickActions";
+import {
+  MRRCard,
+  ARRCard,
+  ChurnRetentionCard,
+  LTVCACCard,
+  DespesasFixasCard,
+  DespesasVariaveisCard,
+  PrevisaoCaixaCard
+} from "./AdvancedKPICards";
 
 // Função para formatar valores monetários
 const formatCurrency = (value: number) => {
@@ -211,6 +220,48 @@ const AdminDashboard = () => {
             variant={stat.variant}
           />
         ))}
+      </div>
+
+      {/* Seção KPI Avançados */}
+      <div className="space-y-6">
+        <div className="text-center lg:text-left">
+          <h2 className="text-3xl font-bold text-glow text-primary">
+            KPI Avançados
+          </h2>
+          <p className="text-lg text-muted-foreground mt-2">
+            Métricas avançadas para análise de performance
+          </p>
+        </div>
+
+        {/* MRR e ARR */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <MRRCard />
+          <ARRCard />
+        </div>
+
+        {/* Churn & Retenção e LTV/CAC */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <ChurnRetentionCard />
+          <LTVCACCard />
+        </div>
+
+        {/* Bloco Financeiro */}
+        <div className="space-y-6">
+          <h3 className="text-2xl font-bold text-primary">Financeiro</h3>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {/* Despesas Fixas */}
+            <DespesasFixasCard />
+            
+            {/* Despesas Variáveis */}
+            <DespesasVariaveisCard />
+            
+            {/* Previsão de Caixa */}
+            <div className="lg:col-span-2">
+              <PrevisaoCaixaCard />
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Mostrar erro se houver */}
