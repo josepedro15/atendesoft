@@ -341,12 +341,7 @@ const AdminImplementation = () => {
   const clientsInProgress = clients.filter(client => getProgressPercentage(client) < 100);
   const clientsCompleted = clients.filter(client => getProgressPercentage(client) === 100);
 
-  // Monitorar mudanças na aba ativa
-  useEffect(() => {
-    console.log('🔄 Aba alterada via useEffect:', activeTab);
-    console.log('🔄 Clientes em andamento:', clientsInProgress.length);
-    console.log('🔄 Clientes concluídos:', clientsCompleted.length);
-  }, [activeTab, clientsInProgress.length, clientsCompleted.length]);
+
 
   const toggleCardExpansion = (clientId: string) => {
     setExpandedCards(prev => {
@@ -371,11 +366,7 @@ const AdminImplementation = () => {
   };
 
   const handleTabChange = (value: string) => {
-    console.log('🔍 Mudando aba para:', value);
-    console.log('🔍 Estado anterior:', activeTab);
-    console.log('🔍 Novo estado:', value);
     setActiveTab(value);
-    console.log('🔍 Estado atualizado para:', value);
   };
 
   // Verificar se é admin
@@ -450,11 +441,7 @@ const AdminImplementation = () => {
         <div className="grid w-full grid-cols-2 gap-2 mb-6">
           <Button
             variant={activeTab === 'in-progress' ? 'default' : 'outline'}
-            onClick={() => {
-              console.log('🔍 Botão "Em Andamento" clicado!');
-              console.log('🔍 Valor do botão: in-progress');
-              handleTabChange('in-progress');
-            }}
+            onClick={() => handleTabChange('in-progress')}
             className="flex items-center gap-2"
           >
             <Play className="h-4 w-4" />
@@ -462,11 +449,7 @@ const AdminImplementation = () => {
           </Button>
           <Button
             variant={activeTab === 'completed' ? 'default' : 'outline'}
-            onClick={() => {
-              console.log('🔍 Botão "Concluídos" clicado!');
-              console.log('🔍 Valor do botão: completed');
-              handleTabChange('completed');
-            }}
+            onClick={() => handleTabChange('completed')}
             className="flex items-center gap-2"
           >
             <CheckCircle className="h-4 w-4" />
