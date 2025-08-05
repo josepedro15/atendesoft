@@ -77,12 +77,12 @@ export const useDashboard = () => {
       console.log('✅ Pagamentos encontrados:', paymentsData?.length || 0);
 
       const totalPayments = paymentsData?.length || 0;
-      const pendingPayments = paymentsData?.filter(p => p.status === 'pending').length || 0;
+      const pendingPayments = paymentsData?.filter(payment => payment.status === 'pending').length || 0;
       
-      const totalAmount = paymentsData?.reduce((sum, p) => sum + parseFloat(p.amount || '0'), 0) || 0;
+      const totalAmount = paymentsData?.reduce((sum, payment) => sum + parseFloat(payment.amount || '0'), 0) || 0;
       const pendingAmount = paymentsData
-        ?.filter(p => p.status === 'pending')
-        .reduce((sum, p) => sum + parseFloat(p.amount || '0'), 0) || 0;
+        ?.filter(payment => payment.status === 'pending')
+        .reduce((sum, payment) => sum + parseFloat(payment.amount || '0'), 0) || 0;
 
       // 3. Buscar estatísticas de implementações para calcular serviços ativos
       console.log('🔧 Buscando estatísticas de implementações...');
@@ -129,19 +129,6 @@ export const useDashboard = () => {
           
           // Usar o número real de steps deste usuário
           const totalSteps = userSteps.length;
-          const completedSteps = userSteps.filter(step => step.status === 'completed' || step.status === 'complet').length;
-          const progressPercentage = (completedSteps / totalSteps) * 100;
-        
-        // Calcular para cada usuário
-        console.log('🔍 Debug - Calculando implementações e serviços:');
-        console.log('Total de usuários com implementação:', userProgressMap.size);
-        
-        console.log('🔍 Debug - Iniciando processamento de usuários...');
-        console.log('🔍 Debug - userProgressMap entries:', Array.from(userProgressMap.entries()));
-        
-        Array.from(userProgressMap.entries()).forEach(([userId, userSteps]) => {
-          console.log(`🔍 Debug - Processando usuário ${userId}:`, userSteps);
-          
           const completedSteps = userSteps.filter(step => step.status === 'completed' || step.status === 'complet').length;
           const progressPercentage = (completedSteps / totalSteps) * 100;
           
@@ -193,7 +180,7 @@ export const useDashboard = () => {
         console.log('- activeImplementations:', activeImplementations);
       }
 
-      // 5. Calcular receita mensal (versão corrigida)
+      // 5. Calcular receita mensal
       const currentMonthPayments = paymentsData?.filter(payment => {
         const paymentDate = payment.paid_date ? new Date(payment.paid_date) : new Date(payment.created_at);
         return paymentDate.getMonth() === currentMonth && 
