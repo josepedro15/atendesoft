@@ -17,15 +17,16 @@ import {
 
 import StatsCard from "./StatsCard";
 import QuickActions from "./QuickActions";
-import {
-  MRRCard,
-  ARRCard,
-  ChurnRetentionCard,
-  LTVCACCard,
-  DespesasFixasCard,
-  DespesasVariaveisCard,
-  PrevisaoCaixaCard
-} from "./AdvancedKPICards";
+// Temporariamente comentado para debug
+// import {
+//   MRRCard,
+//   ARRCard,
+//   ChurnRetentionCard,
+//   LTVCACCard,
+//   DespesasFixasCard,
+//   DespesasVariaveisCard,
+//   PrevisaoCaixaCard
+// } from "./AdvancedKPICards";
 
 // Função para formatar valores monetários
 const formatCurrency = (value: number) => {
@@ -222,7 +223,7 @@ const AdminDashboard = () => {
         ))}
       </div>
 
-      {/* Seção KPI Avançados - Lazy Load */}
+      {/* Seção KPI Avançados - Temporariamente desabilitada para debug */}
       {!loading && (
         <div className="space-y-6">
           <div className="text-center lg:text-left">
@@ -233,35 +234,11 @@ const AdminDashboard = () => {
               Métricas avançadas para análise de performance
             </p>
           </div>
-
-          {/* MRR e ARR */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <MRRCard />
-            <ARRCard />
-          </div>
-
-          {/* Churn & Retenção e LTV/CAC */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <ChurnRetentionCard />
-            <LTVCACCard />
-          </div>
-
-          {/* Bloco Financeiro */}
-          <div className="space-y-6">
-            <h3 className="text-2xl font-bold text-primary">Financeiro</h3>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {/* Despesas Fixas */}
-              <DespesasFixasCard />
-              
-              {/* Despesas Variáveis */}
-              <DespesasVariaveisCard />
-              
-              {/* Previsão de Caixa */}
-              <div className="lg:col-span-2">
-                <PrevisaoCaixaCard />
-              </div>
-            </div>
+          
+          <div className="text-center p-8 border border-dashed border-primary/20 rounded-lg">
+            <p className="text-muted-foreground">
+              KPIs avançados temporariamente desabilitados para debug
+            </p>
           </div>
         </div>
       )}
