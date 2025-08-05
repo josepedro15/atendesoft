@@ -61,7 +61,7 @@ const generateStats = (stats: any) => [
   },
   {
     id: '4',
-    title: 'Recebido no Mês',
+    title: 'Faturamento do Mês',
     value: formatCurrency(stats.monthlyRevenue),
     description: `${stats.monthlyGrowth >= 0 ? '+' : ''}${stats.monthlyGrowth.toFixed(1)}% vs mês anterior`,
     icon: <DollarSign className="h-4 w-4" />,
