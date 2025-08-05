@@ -168,6 +168,12 @@ export const useDashboard = () => {
         totalServices = userProgressMap.size;
         // Total de implementações = todos os clientes com implementação
         totalImplementations = userProgressMap.size;
+        
+        console.log('🔧 Após atribuição de totais:');
+        console.log('- totalServices:', totalServices);
+        console.log('- activeServices:', activeServices);
+        console.log('- totalImplementations:', totalImplementations);
+        console.log('- activeImplementations:', activeImplementations);
       }
 
 

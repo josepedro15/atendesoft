@@ -46,7 +46,7 @@ SELECT
   user_id,
   total_steps,
   completed_steps,
-  ROUND((completed_steps::float / total_steps) * 100, 2) as progress_percentage,
+  ROUND((completed_steps::float / total_steps) * 100) as progress_percentage,
   CASE 
     WHEN ROUND((completed_steps::float / total_steps) * 100) = 100 THEN 'SERVIÇO ATIVO'
     ELSE 'EM IMPLEMENTAÇÃO'
