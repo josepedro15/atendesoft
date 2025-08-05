@@ -168,9 +168,6 @@ const AdminDashboard = () => {
             <h1 className="text-4xl font-bold text-glow text-primary">
               Dashboard Administrativo
             </h1>
-            <p className="text-lg text-muted-foreground mt-2">
-              Visão geral e controle central do sistema
-            </p>
           </div>
         </div>
       </div>
