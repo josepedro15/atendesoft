@@ -8,7 +8,13 @@ EXCEPTION
     WHEN duplicate_object THEN null;
 END $$;
 
--- 2. Create has_role function
+-- 2. Drop existing has_role function if it exists
+DROP FUNCTION IF EXISTS has_role(UUID, app_role);
+DROP FUNCTION IF EXISTS has_role(uuid, app_role);
+DROP FUNCTION IF EXISTS has_role(UUID, text);
+DROP FUNCTION IF EXISTS has_role(uuid, text);
+
+-- 3. Create has_role function
 CREATE OR REPLACE FUNCTION has_role(user_id UUID, role_name app_role)
 RETURNS BOOLEAN AS $$
 BEGIN
@@ -21,11 +27,11 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- 3. Grant execute permission on has_role function
+-- 4. Grant execute permission on has_role function
 GRANT EXECUTE ON FUNCTION has_role(UUID, app_role) TO authenticated;
 GRANT EXECUTE ON FUNCTION has_role(UUID, app_role) TO anon;
 
--- 4. Drop existing problematic policies
+-- 5. Drop existing problematic policies
 DROP POLICY IF EXISTS "Admins can view all profiles" ON profiles;
 DROP POLICY IF EXISTS "Admins can manage all profiles" ON profiles;
 DROP POLICY IF EXISTS "Admins can view all roles" ON user_roles;
@@ -38,7 +44,7 @@ DROP POLICY IF EXISTS "Admins can view all contracts" ON contract_files;
 DROP POLICY IF EXISTS "Admins can manage contracts" ON contract_files;
 DROP POLICY IF EXISTS "Admins can manage implementation steps" ON implementation_steps;
 
--- 5. Recreate policies with proper has_role function
+-- 6. Recreate policies with proper has_role function
 CREATE POLICY "Admins can view all profiles" 
 ON profiles 
 FOR SELECT 
@@ -94,7 +100,7 @@ ON implementation_steps
 FOR ALL 
 USING (has_role(auth.uid(), 'admin'::app_role));
 
--- 6. Insert your user data (replace with your actual user ID)
+-- 7. Insert your user data (replace with your actual user ID)
 INSERT INTO user_roles (user_id, role) VALUES
 ('7f784f8d-ce6b-4c8c-bd3e-3421d259c44a', 'admin')  -- Your user ID from the logs
 ON CONFLICT (user_id) DO NOTHING;
@@ -103,7 +109,7 @@ INSERT INTO profiles (user_id, full_name, company) VALUES
 ('7f784f8d-ce6b-4c8c-bd3e-3421d259c44a', 'José Pedro', 'AtendeSSoft')
 ON CONFLICT (user_id) DO NOTHING;
 
--- 7. Verify the fix
+-- 8. Verify the fix
 SELECT 
     'User Roles' as table_name,
     COUNT(*) as count
