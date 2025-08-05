@@ -396,18 +396,34 @@ const AdminImplementation = () => {
   const clientsCompleted = clients.filter(client => getProgressPercentage(client) === 100);
 
   const toggleCardExpansion = (clientId: string) => {
+    console.log('🔄 Toggle card expansion chamado para:', clientId);
     setExpandedCards(prev => {
       const newSet = new Set(prev);
       if (newSet.has(clientId)) {
         newSet.delete(clientId);
+        console.log('📂 Card colapsado:', clientId);
       } else {
         newSet.add(clientId);
+        console.log('📂 Card expandido:', clientId);
       }
+      console.log('📂 Estado atual dos cards expandidos:', Array.from(newSet));
       return newSet;
     });
   };
 
   const isCardExpanded = (clientId: string) => expandedCards.has(clientId);
+
+  // Handler específico para o botão Configurar
+  const handleConfigurarClick = (clientId: string) => {
+    console.log('🔍 Botão Configurar clicado para:', clientId);
+    toggleCardExpansion(clientId);
+  };
+
+  // Handler específico para o botão Detalhes
+  const handleDetalhesClick = (clientId: string) => {
+    console.log('🔍 Botão Detalhes clicado para:', clientId);
+    setShowDetailsDialog(clientId);
+  };
 
   // Verificar se é admin
   if (!isAdmin) {
