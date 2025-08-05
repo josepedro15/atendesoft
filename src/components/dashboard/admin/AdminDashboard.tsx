@@ -134,6 +134,16 @@ const AdminDashboard = () => {
   console.log('🔍 AdminDashboard - useAuth state:', { isAdmin, isLoading, isInitialized });
   console.log('🔍 AdminDashboard - useDashboard state:', { stats, dashboardLoading, error });
 
+  // Auto-carregar KPIs após 3 segundos
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      console.log('🔍 Auto-carregando KPIs após 3 segundos...');
+      setShowKPIs(true);
+    }, 3000);
+
+    return () => clearTimeout(timer);
+  }, []);
+
   useEffect(() => {
     // Só redirecionar se já foi inicializado e não é admin
     if (isInitialized && !isLoading && !isAdmin) {
