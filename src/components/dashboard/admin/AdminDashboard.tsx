@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-// import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/hooks/useAuth";
 // import { useDashboard } from "@/hooks/useDashboard";
 import { useNavigate } from "react-router-dom";
 import { 
@@ -125,12 +125,42 @@ const mockQuickActions = [
 ];
 
 const AdminDashboard = () => {
-  // Temporariamente desabilitado useAuth para debug
-  // const { isAdmin, isLoading, isInitialized } = useAuth();
+  const { isAdmin, isLoading, isInitialized } = useAuth();
   const navigate = useNavigate();
 
-  // Debug: Renderizar diretamente sem verificações
-  console.log('🔍 AdminDashboard - Renderizando sem useAuth');
+  // Debug: Log do estado do useAuth
+  console.log('🔍 AdminDashboard - useAuth state:', { isAdmin, isLoading, isInitialized });
+
+  useEffect(() => {
+    // Só redirecionar se já foi inicializado e não é admin
+    if (isInitialized && !isLoading && !isAdmin) {
+      navigate('/dashboard');
+    }
+  }, [isAdmin, isLoading, isInitialized, navigate]);
+
+  // Mostrar loading enquanto não foi inicializado
+  if (!isInitialized || isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-4 text-muted-foreground">Carregando dashboard...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Verificar se é admin após inicialização
+  if (!isAdmin) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-glow text-primary">Acesso Negado</h2>
+          <p className="text-muted-foreground mt-2">Você não tem permissão para acessar esta página</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8 p-6 max-w-7xl mx-auto">
@@ -145,7 +175,7 @@ const AdminDashboard = () => {
               Dashboard Administrativo
             </h1>
             <p className="text-lg text-muted-foreground mt-2">
-              Modo Debug - Testando renderização
+              Visão geral e controle central do sistema
             </p>
           </div>
         </div>
@@ -156,9 +186,9 @@ const AdminDashboard = () => {
       
       {/* Cards de Estatísticas - Temporariamente desabilitados */}
       <div className="text-center p-8 border border-dashed border-primary/20 rounded-lg">
-        <h3 className="text-xl font-bold text-primary mb-4">Dashboard em Modo Debug</h3>
+        <h3 className="text-xl font-bold text-primary mb-4">Dashboard Funcionando</h3>
         <p className="text-muted-foreground">
-          useAuth desabilitado temporariamente para identificar problema de renderização
+          useAuth reabilitado com sucesso! Próximo passo: reabilitar useDashboard
         </p>
       </div>
 
