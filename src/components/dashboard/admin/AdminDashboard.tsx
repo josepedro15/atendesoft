@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
+import { useDashboard } from "@/hooks/useDashboard";
 import { useNavigate } from "react-router-dom";
 import { 
   Users, 
@@ -17,23 +18,31 @@ import {
 import StatsCard from "./StatsCard";
 import QuickActions from "./QuickActions";
 
-// Dados mockados para demonstração
-const mockStats = [
+// Função para formatar valores monetários
+const formatCurrency = (value: number) => {
+  return new Intl.NumberFormat('pt-BR', {
+    style: 'currency',
+    currency: 'BRL'
+  }).format(value);
+};
+
+// Função para gerar estatísticas baseadas nos dados reais
+const generateStats = (stats: any) => [
   {
     id: '1',
     title: 'Clientes Ativos',
-    value: 24,
-    description: '+3 este mês',
+    value: stats.totalUsers,
+    description: `+${stats.activeUsers} este mês`,
     icon: <Users className="h-4 w-4" />,
-    trend: { value: 12, isPositive: true },
+    trend: { value: stats.activeUsers, isPositive: stats.activeUsers > 0 },
     link: '/dashboard/users',
     linkText: 'Ver todos os clientes'
   },
   {
     id: '2',
     title: 'Projetos em Implementação',
-    value: 8,
-    description: '3 em progresso',
+    value: stats.totalImplementations,
+    description: `${stats.activeImplementations} em progresso`,
     icon: <GitBranch className="h-4 w-4" />,
     link: '/dashboard/admin-implementation',
     linkText: 'Gerenciar implementações'
@@ -41,8 +50,8 @@ const mockStats = [
   {
     id: '3',
     title: 'Pagamentos Pendentes',
-    value: 'R$ 45.200',
-    description: '12 faturas',
+    value: formatCurrency(stats.pendingAmount),
+    description: `${stats.pendingPayments} faturas`,
     icon: <CreditCard className="h-4 w-4" />,
     variant: 'warning' as const,
     link: '/dashboard/admin-payments',
@@ -51,30 +60,30 @@ const mockStats = [
   {
     id: '4',
     title: 'Recebido no Mês',
-    value: 'R$ 128.500',
-    description: '+18% vs mês anterior',
+    value: formatCurrency(stats.monthlyRevenue),
+    description: `${stats.monthlyGrowth >= 0 ? '+' : ''}${stats.monthlyGrowth.toFixed(1)}% vs mês anterior`,
     icon: <DollarSign className="h-4 w-4" />,
-    trend: { value: 18, isPositive: true },
+    trend: { value: Math.abs(stats.monthlyGrowth), isPositive: stats.monthlyGrowth >= 0 },
     variant: 'success' as const
   },
   {
     id: '5',
     title: 'Serviços Ativos',
-    value: 32,
-    description: '28 ativos, 4 pendentes',
+    value: stats.totalServices,
+    description: `${stats.activeServices} ativos, ${stats.totalServices - stats.activeServices} pendentes`,
     icon: <Layers className="h-4 w-4" />,
     link: '/dashboard/admin-services',
     linkText: 'Ver serviços'
   },
   {
     id: '6',
-    title: 'Tickets de Suporte',
-    value: 5,
-    description: '2 urgentes',
+    title: 'Total de Pagamentos',
+    value: stats.totalPayments,
+    description: `${stats.pendingPayments} pendentes`,
     icon: <MessageSquare className="h-4 w-4" />,
-    variant: 'danger' as const,
-    link: '/dashboard/support',
-    linkText: 'Ver tickets'
+    variant: 'default' as const,
+    link: '/dashboard/admin-payments',
+    linkText: 'Ver pagamentos'
   }
 ];
 
@@ -131,6 +140,7 @@ const mockQuickActions = [
 
 const AdminDashboard = () => {
   const { isAdmin, isLoading, isInitialized } = useAuth();
+  const { stats, loading: dashboardLoading, error } = useDashboard();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -140,8 +150,8 @@ const AdminDashboard = () => {
     }
   }, [isAdmin, isLoading, isInitialized, navigate]);
 
-  // Mostrar loading enquanto não foi inicializado
-  if (!isInitialized || isLoading) {
+  // Mostrar loading enquanto não foi inicializado ou dashboard carregando
+  if (!isInitialized || isLoading || dashboardLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
@@ -185,7 +195,7 @@ const AdminDashboard = () => {
 
       {/* Cards de Estatísticas */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {mockStats.map((stat) => (
+        {generateStats(stats).map((stat) => (
           <StatsCard
             key={stat.id}
             title={stat.title}
@@ -199,6 +209,15 @@ const AdminDashboard = () => {
           />
         ))}
       </div>
+
+      {/* Mostrar erro se houver */}
+      {error && (
+        <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4">
+          <p className="text-destructive text-sm">
+            Erro ao carregar dados: {error}
+          </p>
+        </div>
+      )}
 
       {/* Ações Rápidas */}
       <QuickActions actions={mockQuickActions} />
