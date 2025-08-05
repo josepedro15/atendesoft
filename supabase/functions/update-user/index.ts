@@ -77,15 +77,45 @@ Deno.serve(async (req) => {
 
     // Atualizar profile
     console.log('Updating profile for user:', userId, 'with data:', { full_name, company, phone });
-    const { data: profileData, error: profileError } = await supabaseClient
+    
+    // Primeiro, verificar se o profile já existe
+    const { data: existingProfile } = await supabaseClient
       .from('profiles')
-      .upsert({
-        user_id: userId,
-        full_name,
-        company,
-        phone
-      })
-      .select()
+      .select('user_id')
+      .eq('user_id', userId)
+      .single()
+    
+    let profileData, profileError;
+    
+    if (existingProfile) {
+      // Se existe, fazer UPDATE
+      console.log('Profile exists, performing UPDATE');
+      const { data, error } = await supabaseClient
+        .from('profiles')
+        .update({
+          full_name,
+          company,
+          phone
+        })
+        .eq('user_id', userId)
+        .select()
+      profileData = data;
+      profileError = error;
+    } else {
+      // Se não existe, fazer INSERT
+      console.log('Profile does not exist, performing INSERT');
+      const { data, error } = await supabaseClient
+        .from('profiles')
+        .insert({
+          user_id: userId,
+          full_name,
+          company,
+          phone
+        })
+        .select()
+      profileData = data;
+      profileError = error;
+    }
 
     if (profileError) {
       console.error('Error updating profile:', profileError)
@@ -98,13 +128,41 @@ Deno.serve(async (req) => {
 
     // Atualizar role
     console.log('Updating role for user:', userId, 'to:', role);
-    const { data: roleData, error: roleError } = await supabaseClient
+    
+    // Primeiro, verificar se o role já existe
+    const { data: existingRole } = await supabaseClient
       .from('user_roles')
-      .upsert({
-        user_id: userId,
-        role: role || 'user'
-      })
-      .select()
+      .select('user_id')
+      .eq('user_id', userId)
+      .single()
+    
+    let roleData, roleError;
+    
+    if (existingRole) {
+      // Se existe, fazer UPDATE
+      console.log('Role exists, performing UPDATE');
+      const { data, error } = await supabaseClient
+        .from('user_roles')
+        .update({
+          role: role || 'user'
+        })
+        .eq('user_id', userId)
+        .select()
+      roleData = data;
+      roleError = error;
+    } else {
+      // Se não existe, fazer INSERT
+      console.log('Role does not exist, performing INSERT');
+      const { data, error } = await supabaseClient
+        .from('user_roles')
+        .insert({
+          user_id: userId,
+          role: role || 'user'
+        })
+        .select()
+      roleData = data;
+      roleError = error;
+    }
 
     if (roleError) {
       console.error('Error updating role:', roleError)
