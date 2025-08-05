@@ -82,12 +82,19 @@ export const useAuth = () => {
         
         if (!mounted) return;
 
+        // Definir sessão e usuário imediatamente
         setSession(currentSession);
         setUser(currentSession?.user ?? null);
         
+        // Se há sessão, marcar como inicializado imediatamente
         if (currentSession?.user) {
-          console.log('User found, fetching data...');
+          console.log('User found, marking as initialized immediately');
+          setIsLoading(false);
+          setIsInitialized(true);
+          
+          // Buscar dados adicionais em background
           try {
+            console.log('Fetching additional user data...');
             await fetchUserData(currentSession.user.id);
           } catch (fetchError) {
             console.error('Error fetching user data:', fetchError);
@@ -99,16 +106,14 @@ export const useAuth = () => {
           console.log('No user found, setting defaults...');
           setProfile(null);
           setUserRole('user');
+          setIsLoading(false);
+          setIsInitialized(true);
         }
       } catch (error) {
         console.error('Erro ao inicializar auth:', error);
         if (mounted) {
           setProfile(null);
           setUserRole('user');
-        }
-      } finally {
-        if (mounted) {
-          console.log('Auth initialization complete');
           setIsLoading(false);
           setIsInitialized(true);
         }
@@ -122,11 +127,16 @@ export const useAuth = () => {
         
         if (!mounted) return;
         
+        // Definir sessão e usuário imediatamente
         setSession(newSession);
         setUser(newSession?.user ?? null);
         
+        // Marcar como inicializado imediatamente
+        setIsLoading(false);
+        setIsInitialized(true);
+        
         if (newSession?.user) {
-          console.log('New user session, fetching data...');
+          console.log('New user session, fetching additional data...');
           try {
             await fetchUserData(newSession.user.id);
           } catch (fetchError) {
@@ -140,10 +150,6 @@ export const useAuth = () => {
           setProfile(null);
           setUserRole('user');
         }
-        
-        // Sempre marcar como inicializado após mudança de auth
-        setIsLoading(false);
-        setIsInitialized(true);
       }
     );
 
