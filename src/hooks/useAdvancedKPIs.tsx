@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { AdvancedKPIs, KPIManualInput, DespesasMes } from '@/integrations/supabase/types';
+import { AdvancedKPIs } from '@/integrations/supabase/types';
 
 export const useAdvancedKPIs = () => {
   const [advancedKPIs, setAdvancedKPIs] = useState<AdvancedKPIs>({
@@ -23,6 +23,31 @@ export const useAdvancedKPIs = () => {
     const now = new Date();
     const prevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
     return `${prevMonth.getFullYear()}-${String(prevMonth.getMonth() + 1).padStart(2, '0')}`;
+  };
+
+  const calculateMRR = (payments: any[]) => {
+    const currentMonth = new Date().getMonth();
+    const currentYear = new Date().getFullYear();
+    
+    // Calcular receita dos últimos 3 meses para sparkline
+    const sparkline = [];
+    for (let i = 2; i >= 0; i--) {
+      const month = new Date(currentYear, currentMonth - i, 1);
+      const monthPayments = payments.filter(payment => {
+        const paymentDate = payment.paid_date ? new Date(payment.paid_date) : new Date(payment.created_at);
+        return paymentDate.getMonth() === month.getMonth() && 
+               paymentDate.getFullYear() === month.getFullYear() &&
+               payment.status === 'paid';
+      });
+      const revenue = monthPayments.reduce((sum, p) => sum + parseFloat(p.amount || '0'), 0);
+      sparkline.push(revenue);
+    }
+
+    const current = sparkline[2] || 0;
+    const previous = sparkline[1] || 0;
+    const growth = previous > 0 ? ((current - previous) / previous) * 100 : 0;
+
+    return { current, previous, growth, sparkline };
   };
 
   const fetchAdvancedKPIs = async () => {
@@ -120,31 +145,6 @@ export const useAdvancedKPIs = () => {
     } finally {
       setLoading(false);
     }
-  };
-
-  const calculateMRR = (payments: any[]) => {
-    const currentMonth = new Date().getMonth();
-    const currentYear = new Date().getFullYear();
-    
-    // Calcular receita dos últimos 3 meses para sparkline
-    const sparkline = [];
-    for (let i = 2; i >= 0; i--) {
-      const month = new Date(currentYear, currentMonth - i, 1);
-      const monthPayments = payments.filter(payment => {
-        const paymentDate = payment.paid_date ? new Date(payment.paid_date) : new Date(payment.created_at);
-        return paymentDate.getMonth() === month.getMonth() && 
-               paymentDate.getFullYear() === month.getFullYear() &&
-               payment.status === 'paid';
-      });
-      const revenue = monthPayments.reduce((sum, p) => sum + parseFloat(p.amount || '0'), 0);
-      sparkline.push(revenue);
-    }
-
-    const current = sparkline[2] || 0;
-    const previous = sparkline[1] || 0;
-    const growth = previous > 0 ? ((current - previous) / previous) * 100 : 0;
-
-    return { current, previous, growth, sparkline };
   };
 
   const saveChurnData = async (data: { clientesInicio: number; cancelados: number; renovados: number }) => {
