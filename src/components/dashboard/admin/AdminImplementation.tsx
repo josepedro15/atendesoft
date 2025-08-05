@@ -88,7 +88,7 @@ const AdminImplementation = () => {
   const [loadingUsers, setLoadingUsers] = useState(false);
   const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set());
   const [showDetailsDialog, setShowDetailsDialog] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState('in-progress');
+  const [currentTab, setCurrentTab] = useState<'in-progress' | 'completed'>('in-progress');
   const { toast } = useToast();
   const { isAdmin, isInitialized } = useAuth();
 
@@ -103,8 +103,6 @@ const AdminImplementation = () => {
       fetchAvailableUsers();
     }
   }, [showAddClientDialog]);
-
-
 
   const fetchData = async () => {
     try {
@@ -341,8 +339,6 @@ const AdminImplementation = () => {
   const clientsInProgress = clients.filter(client => getProgressPercentage(client) < 100);
   const clientsCompleted = clients.filter(client => getProgressPercentage(client) === 100);
 
-
-
   const toggleCardExpansion = (clientId: string) => {
     setExpandedCards(prev => {
       const newSet = new Set(prev);
@@ -363,10 +359,6 @@ const AdminImplementation = () => {
 
   const handleDetalhesClick = (clientId: string) => {
     setShowDetailsDialog(clientId);
-  };
-
-  const handleTabChange = (value: string) => {
-    setActiveTab(value);
   };
 
   // Verificar se é admin
@@ -436,29 +428,35 @@ const AdminImplementation = () => {
         </div>
       </div>
 
-      {/* Abas de Implementações */}
+      {/* Abas Ultra-Simples */}
       <div className="w-full">
         <div className="grid w-full grid-cols-2 gap-2 mb-6">
-          <Button
-            variant={activeTab === 'in-progress' ? 'default' : 'outline'}
-            onClick={() => handleTabChange('in-progress')}
-            className="flex items-center gap-2"
+          <button
+            onClick={() => setCurrentTab('in-progress')}
+            className={`flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-medium transition-all ${
+              currentTab === 'in-progress' 
+                ? 'bg-primary text-primary-foreground shadow-lg' 
+                : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
+            }`}
           >
             <Play className="h-4 w-4" />
             Em Andamento ({clientsInProgress.length})
-          </Button>
-          <Button
-            variant={activeTab === 'completed' ? 'default' : 'outline'}
-            onClick={() => handleTabChange('completed')}
-            className="flex items-center gap-2"
+          </button>
+          <button
+            onClick={() => setCurrentTab('completed')}
+            className={`flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-medium transition-all ${
+              currentTab === 'completed' 
+                ? 'bg-primary text-primary-foreground shadow-lg' 
+                : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
+            }`}
           >
             <CheckCircle className="h-4 w-4" />
             Concluídos ({clientsCompleted.length})
-          </Button>
+          </button>
         </div>
 
         {/* Conteúdo das Abas */}
-        {activeTab === 'in-progress' && (
+        {currentTab === 'in-progress' && (
           <div>
             {loading ? (
               <div className="flex items-center justify-center p-8">
@@ -578,7 +576,7 @@ const AdminImplementation = () => {
           </div>
         )}
 
-        {activeTab === 'completed' && (
+        {currentTab === 'completed' && (
           <div>
             {loading ? (
               <div className="flex items-center justify-center p-8">
