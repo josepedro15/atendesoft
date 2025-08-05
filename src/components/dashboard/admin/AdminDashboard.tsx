@@ -18,15 +18,7 @@ import {
 import StatsCard from "./StatsCard";
 import QuickActions from "./QuickActions";
 import { Button } from "@/components/ui/button";
-import {
-  LazyMRRCard,
-  LazyARRCard,
-  LazyChurnRetentionCard,
-  LazyLTVCACCard,
-  LazyDespesasFixasCard,
-  LazyDespesasVariaveisCard,
-  LazyPrevisaoCaixaCard
-} from "./LazyKPICards";
+
 
 // Função para formatar valores monetários
 const formatCurrency = (value: number) => {
@@ -128,21 +120,10 @@ const AdminDashboard = () => {
   const { isAdmin, isLoading, isInitialized } = useAuth();
   const { stats, loading: dashboardLoading, error } = useDashboard();
   const navigate = useNavigate();
-  const [showKPIs, setShowKPIs] = useState(false);
 
   // Debug: Log do estado do useAuth
   console.log('🔍 AdminDashboard - useAuth state:', { isAdmin, isLoading, isInitialized });
   console.log('🔍 AdminDashboard - useDashboard state:', { stats, dashboardLoading, error });
-
-  // Auto-carregar KPIs após 3 segundos
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      console.log('🔍 Auto-carregando KPIs após 3 segundos...');
-      setShowKPIs(true);
-    }, 3000);
-
-    return () => clearTimeout(timer);
-  }, []);
 
   useEffect(() => {
     // Só redirecionar se já foi inicializado e não é admin
@@ -217,78 +198,7 @@ const AdminDashboard = () => {
         ))}
       </div>
 
-      {/* Seção KPI Avançados - Lazy Load */}
-      <div className="space-y-6">
-        <div className="text-center lg:text-left">
-          <h2 className="text-3xl font-bold text-glow text-primary">
-            KPI Avançados
-          </h2>
-          <p className="text-lg text-muted-foreground mt-2">
-            Métricas avançadas para análise de performance
-          </p>
-        </div>
-
-        {/* Botão para carregar KPIs */}
-        <div className="text-center">
-          <Button 
-            onClick={() => {
-              console.log('🔍 Botão KPIs clicado!');
-              console.log('🔍 Estado atual showKPIs:', showKPIs);
-              setShowKPIs(true);
-              console.log('🔍 Estado após setShowKPIs:', true);
-            }}
-            className="px-8 py-3 text-lg bg-blue-600 hover:bg-blue-700"
-            disabled={showKPIs}
-          >
-            {showKPIs ? 'KPIs Carregados' : 'Carregar KPIs Avançados'}
-          </Button>
-          <p className="text-sm text-muted-foreground mt-2">
-            Status: {showKPIs ? 'Carregando KPIs...' : 'Clique para carregar'}
-          </p>
-          <p className="text-xs text-muted-foreground mt-1">
-            Debug: showKPIs = {showKPIs.toString()}
-          </p>
-        </div>
-
-                {/* KPIs carregados condicionalmente - Lazy Loading Individual */}
-        {showKPIs && (
-          <>
-            <div className="text-center p-4 bg-green-500/10 border border-green-500/20 rounded-lg">
-              <p className="text-green-500 font-medium">KPIs carregados com sucesso!</p>
-            </div>
-
-            {/* MRR e ARR - Lazy Loading */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <LazyMRRCard />
-              <LazyARRCard />
-            </div>
-
-            {/* Churn & Retenção e LTV/CAC - Lazy Loading */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <LazyChurnRetentionCard />
-              <LazyLTVCACCard />
-            </div>
-
-            {/* Bloco Financeiro - Lazy Loading */}
-            <div className="space-y-6">
-              <h3 className="text-2xl font-bold text-primary">Financeiro</h3>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                {/* Despesas Fixas */}
-                <LazyDespesasFixasCard />
-
-                {/* Despesas Variáveis */}
-                <LazyDespesasVariaveisCard />
-
-                {/* Previsão de Caixa */}
-                <div className="lg:col-span-2">
-                  <LazyPrevisaoCaixaCard />
-                </div>
-              </div>
-            </div>
-          </>
-        )}
-      </div>
+      
 
       {/* Ações Rápidas */}
       <QuickActions actions={mockQuickActions} />
