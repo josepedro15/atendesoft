@@ -92,16 +92,21 @@ export const useDashboard = () => {
       let totalImplementations = 0;
       let activeImplementations = 0;
 
+      console.log('🔍 Debug - Dados brutos de implementações:', implementationsData);
+
       if (implementationsData && implementationsData.length > 0) {
         // Agrupar por usuário para calcular progresso
         const userProgressMap = new Map<string, any[]>();
         
         implementationsData.forEach(impl => {
+          console.log('📝 Processando implementação:', impl);
           if (!userProgressMap.has(impl.user_id)) {
             userProgressMap.set(impl.user_id, []);
           }
           userProgressMap.get(impl.user_id)!.push(impl);
         });
+        
+        console.log('📊 Mapa de progresso por usuário:', userProgressMap);
 
         // Assumindo que temos 5 etapas padrão (como definido no AdminImplementation)
         const totalSteps = 5;
@@ -145,6 +150,13 @@ export const useDashboard = () => {
           totalImplementations,
           activeImplementations
         });
+        
+        // Verificação adicional
+        console.log('🔍 Verificação final:');
+        console.log('- Total de usuários únicos:', userProgressMap.size);
+        console.log('- Serviços ativos (100%):', activeServices);
+        console.log('- Em implementação (<100%):', activeImplementations);
+        console.log('- Soma deve ser igual ao total:', activeServices + activeImplementations === userProgressMap.size);
         
         // Total de serviços = todos os clientes com implementação
         totalServices = userProgressMap.size;
