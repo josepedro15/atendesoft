@@ -62,6 +62,7 @@ const AdminPayments = () => {
 
   const fetchPayments = async () => {
     try {
+      console.log('Buscando pagamentos...');
       setLoading(true);
       
       // Buscar pagamentos com informações do usuário
@@ -69,7 +70,7 @@ const AdminPayments = () => {
         .from('payments')
         .select(`
           *,
-          profiles!inner(full_name, company)
+          profiles(full_name, company)
         `)
         .order('due_date', { ascending: false });
 
@@ -79,6 +80,7 @@ const AdminPayments = () => {
       }
 
       const paymentsData = data || [];
+      console.log('Pagamentos encontrados:', paymentsData.length, paymentsData);
       setPayments(paymentsData as any);
 
       // Calcular estatísticas
@@ -191,8 +193,13 @@ const AdminPayments = () => {
         description: "Pagamento criado com sucesso"
       });
 
+      console.log('Pagamento criado, recarregando lista...');
       setIsCreateDialogOpen(false);
-      fetchPayments();
+      await fetchPayments();
+      console.log('Lista de pagamentos recarregada');
+      
+      // Forçar re-render da interface
+      setPayments(prevPayments => [...prevPayments]);
     } catch (error) {
       console.error('Erro ao criar pagamento:', error);
       toast({
