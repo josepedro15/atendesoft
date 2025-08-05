@@ -512,47 +512,51 @@ const AdminImplementation = () => {
         </div>
       </div>
 
-      {/* Abas de Implementações */}
-      <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger 
-            value="in-progress" 
+      {/* Abas de Implementações - Versão com Botões */}
+      <div className="w-full">
+        <div className="grid w-full grid-cols-2 gap-2 mb-6">
+          <Button
+            variant={activeTab === 'in-progress' ? 'default' : 'outline'}
+            onClick={() => handleTabChange('in-progress')}
             className="flex items-center gap-2"
           >
             <Play className="h-4 w-4" />
             Em Andamento ({clientsInProgress.length})
-          </TabsTrigger>
-          <TabsTrigger 
-            value="completed" 
+          </Button>
+          <Button
+            variant={activeTab === 'completed' ? 'default' : 'outline'}
+            onClick={() => handleTabChange('completed')}
             className="flex items-center gap-2"
           >
             <CheckCircle className="h-4 w-4" />
             Concluídos ({clientsCompleted.length})
-          </TabsTrigger>
-        </TabsList>
+          </Button>
+        </div>
 
-        <TabsContent value="in-progress" className="mt-6">
-          {loading ? (
-            <div className="flex items-center justify-center p-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-            </div>
-          ) : clientsInProgress.length === 0 ? (
-            <Card className="card-glass">
-              <CardContent className="p-8">
-                <div className="text-center space-y-4">
-                  <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
-                    <Play className="h-8 w-8 text-primary" />
+        {/* Conteúdo da aba Em Andamento */}
+        {activeTab === 'in-progress' && (
+          <div className="mt-6">
+            {loading ? (
+              <div className="flex items-center justify-center p-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              </div>
+            ) : clientsInProgress.length === 0 ? (
+              <Card className="card-glass">
+                <CardContent className="p-8">
+                  <div className="text-center space-y-4">
+                    <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
+                      <Play className="h-8 w-8 text-primary" />
+                    </div>
+                    <h3 className="text-xl font-semibold">Nenhum projeto em andamento</h3>
+                    <p className="text-muted-foreground">
+                      Todos os projetos foram concluídos ou ainda não foram iniciados.
+                    </p>
                   </div>
-                  <h3 className="text-xl font-semibold">Nenhum projeto em andamento</h3>
-                  <p className="text-muted-foreground">
-                    Todos os projetos foram concluídos ou ainda não foram iniciados.
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="grid gap-6">
-              {clientsInProgress.map((client) => (
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="grid gap-6">
+                {clientsInProgress.map((client) => (
                 <Card key={client.user_id} className="card-glass">
                   <CardHeader>
                     <div className="flex items-center justify-between">
