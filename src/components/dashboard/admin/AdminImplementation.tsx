@@ -425,6 +425,15 @@ const AdminImplementation = () => {
     setShowDetailsDialog(clientId);
   };
 
+  // Estado para controlar aba ativa
+  const [activeTab, setActiveTab] = useState('in-progress');
+
+  // Handler para mudança de aba
+  const handleTabChange = (value: string) => {
+    console.log('🔍 Mudando aba para:', value);
+    setActiveTab(value);
+  };
+
   // Verificar se é admin
   if (!isAdmin) {
     return (
@@ -494,13 +503,19 @@ const AdminImplementation = () => {
       </div>
 
       {/* Abas de Implementações */}
-      <Tabs defaultValue="in-progress" className="w-full">
+      <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
         <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="in-progress" className="flex items-center gap-2">
+          <TabsTrigger 
+            value="in-progress" 
+            className="flex items-center gap-2"
+          >
             <Play className="h-4 w-4" />
             Em Andamento ({clientsInProgress.length})
           </TabsTrigger>
-          <TabsTrigger value="completed" className="flex items-center gap-2">
+          <TabsTrigger 
+            value="completed" 
+            className="flex items-center gap-2"
+          >
             <CheckCircle className="h-4 w-4" />
             Concluídos ({clientsCompleted.length})
           </TabsTrigger>
