@@ -35,11 +35,13 @@ export const useDashboard = () => {
   const [error, setError] = useState<string | null>(null);
 
   const fetchDashboardStats = async () => {
+    console.log('🚀 useDashboard: Iniciando busca de estatísticas...');
     try {
       setLoading(true);
       setError(null);
 
       // 1. Buscar estatísticas de usuários
+      console.log('📊 Buscando estatísticas de usuários...');
       const { data: usersData, error: usersError } = await supabase
         .from('profiles')
         .select('user_id, created_at');
@@ -48,6 +50,8 @@ export const useDashboard = () => {
         console.error('Erro ao buscar usuários:', usersError);
         throw usersError;
       }
+      
+      console.log('✅ Usuários encontrados:', usersData?.length || 0);
 
       const totalUsers = usersData?.length || 0;
       const currentMonth = new Date().getMonth();
@@ -59,6 +63,7 @@ export const useDashboard = () => {
       }).length || 0;
 
       // 2. Buscar estatísticas de pagamentos
+      console.log('💰 Buscando estatísticas de pagamentos...');
       const { data: paymentsData, error: paymentsError } = await supabase
         .from('payments')
         .select('amount, status, created_at, paid_date');
@@ -67,6 +72,8 @@ export const useDashboard = () => {
         console.error('Erro ao buscar pagamentos:', paymentsError);
         throw paymentsError;
       }
+      
+      console.log('✅ Pagamentos encontrados:', paymentsData?.length || 0);
 
       const totalPayments = paymentsData?.length || 0;
       const pendingPayments = paymentsData?.filter(p => p.status === 'pending').length || 0;
@@ -77,6 +84,7 @@ export const useDashboard = () => {
         .reduce((sum, p) => sum + parseFloat(p.amount || '0'), 0) || 0;
 
       // 3. Buscar estatísticas de implementações para calcular serviços ativos
+      console.log('🔧 Buscando estatísticas de implementações...');
       const { data: implementationsData, error: implementationsError } = await supabase
         .from('user_implementation_progress')
         .select('user_id, status, created_at');
