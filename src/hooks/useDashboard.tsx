@@ -127,7 +127,7 @@ export const useDashboard = () => {
           const completedSteps = userSteps.filter(step => step.status === 'completed').length;
           const progressPercentage = (completedSteps / totalSteps) * 100;
           
-          // Usar Math.round para evitar problemas de precisão decimal
+          // Calcular percentual arredondado para evitar problemas de precisão decimal
           const roundedPercentage = Math.round(progressPercentage);
           
           console.log(`👤 Usuário ${userId}:`, {
