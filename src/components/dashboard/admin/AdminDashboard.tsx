@@ -222,16 +222,21 @@ const AdminDashboard = () => {
         <div className="text-center">
           <Button 
             onClick={() => {
-              console.log('🔍 Botão KPIs clicado, showKPIs:', !showKPIs);
+              console.log('🔍 Botão KPIs clicado!');
+              console.log('🔍 Estado atual showKPIs:', showKPIs);
               setShowKPIs(true);
+              console.log('🔍 Estado após setShowKPIs:', true);
             }}
-            className="px-8 py-3 text-lg"
+            className="px-8 py-3 text-lg bg-blue-600 hover:bg-blue-700"
             disabled={showKPIs}
           >
             {showKPIs ? 'KPIs Carregados' : 'Carregar KPIs Avançados'}
           </Button>
           <p className="text-sm text-muted-foreground mt-2">
             Status: {showKPIs ? 'Carregando KPIs...' : 'Clique para carregar'}
+          </p>
+          <p className="text-xs text-muted-foreground mt-1">
+            Debug: showKPIs = {showKPIs.toString()}
           </p>
         </div>
 
