@@ -107,17 +107,36 @@ export const useDashboard = () => {
         const totalSteps = 5;
         
         // Calcular para cada usuário
-        Array.from(userProgressMap.values()).forEach(userSteps => {
+        console.log('🔍 Debug - Calculando implementações e serviços:');
+        console.log('Total de usuários com implementação:', userProgressMap.size);
+        
+        Array.from(userProgressMap.entries()).forEach(([userId, userSteps]) => {
           const completedSteps = userSteps.filter(step => step.status === 'completed').length;
           const progressPercentage = (completedSteps / totalSteps) * 100;
+          
+          console.log(`👤 Usuário ${userId}:`, {
+            totalSteps,
+            completedSteps,
+            progressPercentage: `${progressPercentage}%`,
+            status: progressPercentage === 100 ? 'SERVIÇO ATIVO' : 'EM IMPLEMENTAÇÃO'
+          });
           
           if (progressPercentage === 100) {
             // 100% completo = Serviço Ativo
             activeServices++;
+            console.log(`✅ Usuário ${userId} -> Serviço Ativo (${progressPercentage}%)`);
           } else {
             // < 100% = Projeto em Implementação
             activeImplementations++;
+            console.log(`🔄 Usuário ${userId} -> Em Implementação (${progressPercentage}%)`);
           }
+        });
+        
+        console.log('📊 Resultado final:', {
+          totalServices,
+          activeServices,
+          totalImplementations,
+          activeImplementations
         });
         
         // Total de serviços = todos os clientes com implementação
