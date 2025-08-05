@@ -117,7 +117,9 @@ export const useUsers = () => {
         description: "Usuário atualizado com sucesso"
       });
       
+      console.log('Refreshing users list...');
       await fetchUsers(); // Recarrega a lista
+      console.log('Users list refreshed');
       return true;
     } catch (error) {
       console.error('Erro ao atualizar usuário:', error);

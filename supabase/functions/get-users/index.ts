@@ -91,6 +91,9 @@ Deno.serve(async (req) => {
       role: rolesMap.get(authUser.id) || null
     }))
 
+    console.log('Returning users with details:', usersWithDetails.length, 'users')
+    console.log('Sample user data:', usersWithDetails[0])
+
     return new Response(
       JSON.stringify(usersWithDetails),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
