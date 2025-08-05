@@ -120,6 +120,9 @@ export const useUsers = () => {
       console.log('Refreshing users list...');
       await fetchUsers(); // Recarrega a lista
       console.log('Users list refreshed');
+      
+      // Forçar re-render da interface
+      setUsers(prevUsers => [...prevUsers]);
       return true;
     } catch (error) {
       console.error('Erro ao atualizar usuário:', error);
