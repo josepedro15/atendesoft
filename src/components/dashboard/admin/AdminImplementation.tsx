@@ -187,101 +187,45 @@ const AdminImplementation = () => {
   const fetchAvailableUsers = async () => {
     try {
       setLoadingUsers(true);
-      console.log('🔄 === TESTE COMPLETO DO SUPABASE ===');
+      console.log('🔄 Buscando usuários disponíveis...');
       
-      // TESTE 1: Verificar se o cliente Supabase está funcionando
-      console.log('📋 TESTE 1: Verificando cliente Supabase...');
-      console.log('🔗 URL:', supabase.supabaseUrl);
-      console.log('🔑 Anon Key:', supabase.supabaseKey ? 'Presente' : 'Ausente');
-      
-      // TESTE 2: Verificar autenticação
-      console.log('🔐 TESTE 2: Verificando autenticação...');
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-      console.log('✅ Sessão:', session ? 'Ativa' : 'Inativa');
-      console.log('👤 Usuário logado:', session?.user?.email);
-      console.log('❌ Erro sessão:', sessionError);
-      
-      // TESTE 3: Tentar acessar user_roles
-      console.log('🆔 TESTE 3: Tentando acessar user_roles...');
-      const { data: rolesData, error: rolesError } = await supabase
-        .from('user_roles')
-        .select('*')
-        .limit(1);
-      
-      console.log('✅ Acesso user_roles:', rolesData ? 'OK' : 'ERRO');
-      console.log('📊 Dados user_roles:', rolesData);
-      console.log('❌ Erro user_roles:', rolesError);
-      
-      // TESTE 4: Tentar acessar profiles
-      console.log('👤 TESTE 4: Tentando acessar profiles...');
+      // Buscar todos os usuários que não têm implementação
       const { data: profilesData, error: profilesError } = await supabase
         .from('profiles')
-        .select('*')
-        .limit(1);
-      
-      console.log('✅ Acesso profiles:', profilesData ? 'OK' : 'ERRO');
-      console.log('📊 Dados profiles:', profilesData);
-      console.log('❌ Erro profiles:', profilesError);
-      
-      // TESTE 5: Tentar acessar auth.users (pode dar erro de permissão)
-      console.log('🔐 TESTE 5: Tentando acessar auth.users...');
-      try {
-        const { data: { users }, error: authError } = await supabase.auth.admin.listUsers();
-        console.log('✅ Acesso auth.users:', users ? 'OK' : 'ERRO');
-        console.log('📊 Total auth.users:', users?.length || 0);
-        console.log('❌ Erro auth.users:', authError);
-      } catch (authCatchError) {
-        console.log('❌ Erro ao tentar auth.users:', authCatchError);
-      }
-      
-      // TESTE 6: Buscar user_roles com role = 'user'
-      console.log('👥 TESTE 6: Buscando user_roles com role = "user"...');
-      const { data: userRoles, error: userRolesError } = await supabase
-        .from('user_roles')
-        .select('*')
-        .eq('role', 'user');
-      
-      console.log('📊 User roles com role "user":', userRoles?.length || 0);
-      console.log('👥 User roles:', userRoles);
-      console.log('❌ Erro user roles:', userRolesError);
-      
-      // TESTE 7: Se encontrou user_roles, buscar perfis
-      if (userRoles && userRoles.length > 0) {
-        console.log('📋 TESTE 7: Buscando perfis dos usuários...');
-        const userIds = userRoles.map(ur => ur.user_id);
-        const { data: userProfiles, error: userProfilesError } = await supabase
-          .from('profiles')
-          .select('*')
-          .in('user_id', userIds);
-        
-        console.log('📊 Perfis encontrados:', userProfiles?.length || 0);
-        console.log('👤 Perfis:', userProfiles);
-        console.log('❌ Erro perfis:', userProfilesError);
-        
-        // TESTE 8: Criar lista final
-        if (userProfiles && userProfiles.length > 0) {
-          console.log('📝 TESTE 8: Criando lista de clientes...');
-          const availableUsersData = userProfiles.map(profile => ({
-            user_id: profile.user_id,
-            full_name: profile.full_name || 'Nome não informado',
-            company: profile.company || 'Empresa não informada',
-            email: 'email@exemplo.com'
-          }));
-          
-          console.log('✅ Clientes disponíveis:', availableUsersData);
-          setAvailableUsers(availableUsersData);
-        } else {
-          console.log('⚠️ Nenhum perfil encontrado');
-          setAvailableUsers([]);
-        }
-      } else {
-        console.log('⚠️ Nenhum usuário com role "user" encontrado');
+        .select('user_id, full_name, company');
+
+      if (profilesError) {
+        console.error('❌ Erro ao buscar perfis:', profilesError);
         setAvailableUsers([]);
+        return;
       }
-      
-      console.log('✅ === TESTE CONCLUÍDO ===');
+
+      // Buscar usuários que já têm implementação
+      const { data: existingProgress, error: progressError } = await supabase
+        .from('user_implementation_progress')
+        .select('user_id');
+
+      if (progressError) {
+        console.error('❌ Erro ao buscar progresso existente:', progressError);
+        setAvailableUsers([]);
+        return;
+      }
+
+      // Filtrar usuários que não têm implementação
+      const usersWithImplementation = new Set(existingProgress?.map(p => p.user_id) || []);
+      const availableUsersData = (profilesData || [])
+        .filter(profile => !usersWithImplementation.has(profile.user_id))
+        .map(profile => ({
+          user_id: profile.user_id,
+          full_name: profile.full_name || 'Nome não informado',
+          company: profile.company || 'Empresa não informada',
+          email: 'email@exemplo.com'
+        }));
+
+      setAvailableUsers(availableUsersData);
+      console.log('👥 Usuários disponíveis:', availableUsersData.length);
     } catch (error) {
-      console.error('❌ Erro geral:', error);
+      console.error('❌ Erro ao buscar usuários disponíveis:', error);
       setAvailableUsers([]);
     } finally {
       setLoadingUsers(false);
@@ -620,47 +564,48 @@ const AdminImplementation = () => {
                       </div>
                     </div>
                   </CardHeader>
-              
-              {isCardExpanded(client.user_id) && (
-                <CardContent>
-                  <div className="space-y-4">
-                    {steps.map((step) => {
-                      const progress = client.progress.find(p => p.step_id === step.id);
-                      const status = progress?.status || 'pending';
-                      
-                      return (
-                        <div key={step.id} className="flex items-center justify-between p-3 rounded-lg border border-border/50">
-                          <div className="flex items-center gap-3">
-                            {getStatusIcon(status)}
-                            <div>
-                              <h4 className="font-medium">{step.title}</h4>
-                              <p className="text-sm text-muted-foreground">{step.description}</p>
-                              {progress?.notes && (
-                                <p className="text-xs text-muted-foreground mt-1 italic">
-                                  "{progress.notes}"
-                                </p>
-                              )}
+                  
+                  {isCardExpanded(client.user_id) && (
+                    <CardContent>
+                      <div className="space-y-4">
+                        {steps.map((step) => {
+                          const progress = client.progress.find(p => p.step_id === step.id);
+                          const status = progress?.status || 'pending';
+                          
+                          return (
+                            <div key={step.id} className="flex items-center justify-between p-3 rounded-lg border border-border/50">
+                              <div className="flex items-center gap-3">
+                                {getStatusIcon(status)}
+                                <div>
+                                  <h4 className="font-medium">{step.title}</h4>
+                                  <p className="text-sm text-muted-foreground">{step.description}</p>
+                                  {progress?.notes && (
+                                    <p className="text-xs text-muted-foreground mt-1 italic">
+                                      {progress.notes}
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-3">
+                                {getStatusBadge(status)}
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => setEditingProgress(progress || { id: 'new', user_id: client.user_id, step_id: step.id, status: 'pending', step } as UserProgress)}
+                                >
+                                  <Edit className="h-4 w-4" />
+                                </Button>
+                              </div>
                             </div>
-                          </div>
-                          <div className="flex items-center gap-3">
-                            {getStatusBadge(status)}
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => setEditingProgress(progress || { id: 'new', user_id: client.user_id, step_id: step.id, status: 'pending', step } as UserProgress)}
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </CardContent>
-              )}
-            </Card>
-          ))}
-        </div>
+                          );
+                        })}
+                      </div>
+                    </CardContent>
+                  )}
+                </Card>
+              ))}
+            </div>
+          )}
         </TabsContent>
 
         <TabsContent value="completed" className="mt-6">
@@ -782,7 +727,6 @@ const AdminImplementation = () => {
           )}
         </TabsContent>
       </Tabs>
-      )}
 
       {/* Dialog para adicionar cliente */}
       <Dialog open={showAddClientDialog} onOpenChange={(open) => {
@@ -820,40 +764,12 @@ const AdminImplementation = () => {
                 </Select>
               )}
             </div>
-            {availableUsers.length === 0 && !loadingUsers && (
-              <div className="space-y-2">
-                <p className="text-sm text-muted-foreground">
-                  Nenhum cliente disponível para implementação.
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  Adicione clientes através do sistema de cadastro primeiro.
-                </p>
-                <Button
-                  onClick={() => {
-                    console.log('🔄 Testando busca manual...');
-                    fetchAvailableUsers();
-                  }}
-                  variant="outline"
-                  size="sm"
-                >
-                  Testar Busca
-                </Button>
-              </div>
-            )}
-            {availableUsers.length > 0 && (
-              <div className="text-sm text-muted-foreground">
-                {availableUsers.length} cliente(s) disponível(is) para implementação.
-              </div>
-            )}
             <div className="flex justify-end gap-2">
               <Button variant="outline" onClick={() => setShowAddClientDialog(false)}>
                 Cancelar
               </Button>
-              <Button 
-                onClick={addClientImplementation}
-                disabled={!selectedUserId || availableUsers.length === 0 || loadingUsers}
-              >
-                Adicionar Implementação
+              <Button onClick={addClientImplementation} disabled={!selectedUserId}>
+                Adicionar
               </Button>
             </div>
           </div>
@@ -861,18 +777,24 @@ const AdminImplementation = () => {
       </Dialog>
 
       {/* Dialog para editar progresso */}
-      <Dialog open={!!editingProgress} onOpenChange={() => setEditingProgress(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Editar Progresso</DialogTitle>
-          </DialogHeader>
-          {editingProgress && (
+      {editingProgress && (
+        <Dialog open={!!editingProgress} onOpenChange={() => setEditingProgress(null)}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Editar Progresso da Etapa</DialogTitle>
+            </DialogHeader>
             <div className="space-y-4">
               <div>
+                <Label>Etapa</Label>
+                <p className="text-sm text-muted-foreground">
+                  {steps.find(s => s.id === editingProgress.step_id)?.title}
+                </p>
+              </div>
+              <div>
                 <Label>Status</Label>
-                <Select
-                  value={editingProgress.status}
-                  onValueChange={(value) => setEditingProgress({ ...editingProgress, status: value as any })}
+                <Select 
+                  value={editingProgress.status} 
+                  onValueChange={(value) => setEditingProgress({...editingProgress, status: value as any})}
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -888,8 +810,8 @@ const AdminImplementation = () => {
                 <Label>Observações</Label>
                 <Textarea
                   value={editingProgress.notes || ''}
-                  onChange={(e) => setEditingProgress({ ...editingProgress, notes: e.target.value })}
-                  placeholder="Adicione observações sobre o progresso..."
+                  onChange={(e) => setEditingProgress({...editingProgress, notes: e.target.value})}
+                  placeholder="Adicione observações sobre esta etapa..."
                 />
               </div>
               <div className="flex justify-end gap-2">
@@ -904,11 +826,11 @@ const AdminImplementation = () => {
                 </Button>
               </div>
             </div>
-          )}
-        </DialogContent>
-      </Dialog>
+          </DialogContent>
+        </Dialog>
+      )}
 
-      {/* Dialog para detalhes da implementação */}
+      {/* Dialog para detalhes do cliente */}
       <Dialog open={!!showDetailsDialog} onOpenChange={() => setShowDetailsDialog(null)}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
