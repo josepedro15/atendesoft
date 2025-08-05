@@ -149,14 +149,18 @@ END $$;
 ALTER TABLE user_roles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
 
--- Insert user data
-INSERT INTO user_roles (user_id, role) VALUES
-('7f784f8d-ce6b-4c8c-bd3e-3421d259c44a', 'admin')  -- Your user ID from the logs
-ON CONFLICT (user_id) DO NOTHING;
+-- Insert user data (without ON CONFLICT to avoid constraint issues)
+INSERT INTO user_roles (user_id, role) 
+SELECT '7f784f8d-ce6b-4c8c-bd3e-3421d259c44a', 'admin'
+WHERE NOT EXISTS (
+    SELECT 1 FROM user_roles WHERE user_id = '7f784f8d-ce6b-4c8c-bd3e-3421d259c44a'
+);
 
-INSERT INTO profiles (user_id, full_name, company) VALUES
-('7f784f8d-ce6b-4c8c-bd3e-3421d259c44a', 'José Pedro', 'AtendeSSoft')
-ON CONFLICT (user_id) DO NOTHING;
+INSERT INTO profiles (user_id, full_name, company) 
+SELECT '7f784f8d-ce6b-4c8c-bd3e-3421d259c44a', 'José Pedro', 'AtendeSSoft'
+WHERE NOT EXISTS (
+    SELECT 1 FROM profiles WHERE user_id = '7f784f8d-ce6b-4c8c-bd3e-3421d259c44a'
+);
 
 -- 8. Verify the fix
 SELECT 
