@@ -193,7 +193,7 @@ export const useDashboard = () => {
         console.log('- activeImplementations:', activeImplementations);
       }
 
-      // 5. Calcular receita mensal
+      // 5. Calcular receita mensal (atualizado)
       const currentMonthPayments = paymentsData?.filter(p => {
         const paymentDate = p.paid_date ? new Date(p.paid_date) : new Date(p.created_at);
         return paymentDate.getMonth() === currentMonth && 
