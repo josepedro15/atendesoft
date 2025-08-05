@@ -185,11 +185,14 @@ export const useDashboard = () => {
       console.log('💰 Debug - Mês atual:', currentMonth, 'Ano atual:', currentYear);
       
       const currentMonthPayments = paymentsData?.filter(payment => {
-        // Corrigir interpretação de data para evitar problemas de fuso horário
+        // Corrigir interpretação de data para evitar problemas de fuso horário (VERSÃO CORRIGIDA)
         let paymentDate;
         if (payment.paid_date) {
-          const [year, month, day] = payment.paid_date.split('-').map(Number);
-          paymentDate = new Date(year, month - 1, day);
+          const dateParts = payment.paid_date.split('-');
+          const year = parseInt(dateParts[0]);
+          const month = parseInt(dateParts[1]) - 1; // month - 1 porque getMonth() retorna 0-11
+          const day = parseInt(dateParts[2]);
+          paymentDate = new Date(year, month, day);
         } else {
           paymentDate = new Date(payment.created_at);
         }
@@ -223,12 +226,15 @@ export const useDashboard = () => {
       // Debug: Verificar todos os pagamentos para entender a distribuição
       console.log('💰 Debug - Todos os pagamentos disponíveis:');
       paymentsData?.forEach(payment => {
-        // Corrigir interpretação de data para evitar problemas de fuso horário
+        // Corrigir interpretação de data para evitar problemas de fuso horário (VERSÃO CORRIGIDA)
         let paymentDate;
         if (payment.paid_date) {
           // Para paid_date, usar apenas a data (YYYY-MM-DD) sem fuso horário
-          const [year, month, day] = payment.paid_date.split('-').map(Number);
-          paymentDate = new Date(year, month - 1, day); // month - 1 porque getMonth() retorna 0-11
+          const dateParts = payment.paid_date.split('-');
+          const year = parseInt(dateParts[0]);
+          const month = parseInt(dateParts[1]) - 1; // month - 1 porque getMonth() retorna 0-11
+          const day = parseInt(dateParts[2]);
+          paymentDate = new Date(year, month, day);
         } else {
           paymentDate = new Date(payment.created_at);
         }
@@ -245,11 +251,14 @@ export const useDashboard = () => {
       });
       
       const lastMonthPayments = paymentsData?.filter(payment => {
-        // Corrigir interpretação de data para evitar problemas de fuso horário
+        // Corrigir interpretação de data para evitar problemas de fuso horário (VERSÃO CORRIGIDA)
         let paymentDate;
         if (payment.paid_date) {
-          const [year, month, day] = payment.paid_date.split('-').map(Number);
-          paymentDate = new Date(year, month - 1, day);
+          const dateParts = payment.paid_date.split('-');
+          const year = parseInt(dateParts[0]);
+          const month = parseInt(dateParts[1]) - 1; // month - 1 porque getMonth() retorna 0-11
+          const day = parseInt(dateParts[2]);
+          paymentDate = new Date(year, month, day);
         } else {
           paymentDate = new Date(payment.created_at);
         }
