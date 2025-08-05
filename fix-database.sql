@@ -117,6 +117,39 @@ FOR ALL
 USING (has_role(auth.uid(), 'admin'::app_role));
 
 -- 7. Insert your user data (replace with your actual user ID)
+-- First, let's check if tables exist and create them if needed
+DO $$ BEGIN
+    -- Create user_roles table if it doesn't exist
+    CREATE TABLE IF NOT EXISTS user_roles (
+        id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
+        user_id UUID NOT NULL UNIQUE,
+        role app_role NOT NULL DEFAULT 'user',
+        created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
+    );
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
+
+DO $$ BEGIN
+    -- Create profiles table if it doesn't exist
+    CREATE TABLE IF NOT EXISTS profiles (
+        id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
+        user_id UUID NOT NULL UNIQUE,
+        full_name TEXT,
+        phone TEXT,
+        company TEXT,
+        created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+        updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
+    );
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
+
+-- Enable RLS on tables
+ALTER TABLE user_roles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
+
+-- Insert user data
 INSERT INTO user_roles (user_id, role) VALUES
 ('7f784f8d-ce6b-4c8c-bd3e-3421d259c44a', 'admin')  -- Your user ID from the logs
 ON CONFLICT (user_id) DO NOTHING;
