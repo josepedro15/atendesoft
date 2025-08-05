@@ -86,9 +86,11 @@ export const useDashboard = () => {
         // Não vamos falhar se a tabela não existir
       }
 
-      // Calcular serviços ativos baseado em implementações 100% completas
+      // Calcular serviços ativos e projetos em implementação baseado em implementações
       let totalServices = 0;
       let activeServices = 0;
+      let totalImplementations = 0;
+      let activeImplementations = 0;
 
       if (implementationsData && implementationsData.length > 0) {
         // Agrupar por usuário para calcular progresso
@@ -101,21 +103,30 @@ export const useDashboard = () => {
           userProgressMap.get(impl.user_id)!.push(impl);
         });
 
-        // Calcular quantos usuários têm 100% de progresso
-        totalServices = userProgressMap.size;
-        
         // Assumindo que temos 5 etapas padrão (como definido no AdminImplementation)
         const totalSteps = 5;
         
-        activeServices = Array.from(userProgressMap.values()).filter(userSteps => {
+        // Calcular para cada usuário
+        Array.from(userProgressMap.values()).forEach(userSteps => {
           const completedSteps = userSteps.filter(step => step.status === 'completed').length;
-          return completedSteps === totalSteps; // 100% completo
-        }).length;
+          const progressPercentage = (completedSteps / totalSteps) * 100;
+          
+          if (progressPercentage === 100) {
+            // 100% completo = Serviço Ativo
+            activeServices++;
+          } else {
+            // < 100% = Projeto em Implementação
+            activeImplementations++;
+          }
+        });
+        
+        // Total de serviços = todos os clientes com implementação
+        totalServices = userProgressMap.size;
+        // Total de implementações = todos os clientes com implementação
+        totalImplementations = userProgressMap.size;
       }
 
-      // 4. Calcular estatísticas de implementações (usando dados já buscados)
-      const totalImplementations = implementationsData?.length || 0;
-      const activeImplementations = implementationsData?.filter(i => i.status === 'in_progress').length || 0;
+
 
       // 5. Calcular receita mensal
       const currentMonthPayments = paymentsData?.filter(p => {
