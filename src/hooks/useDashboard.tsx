@@ -76,29 +76,44 @@ export const useDashboard = () => {
         ?.filter(p => p.status === 'pending')
         .reduce((sum, p) => sum + parseFloat(p.amount || '0'), 0) || 0;
 
-      // 3. Buscar estatísticas de serviços
-      const { data: servicesData, error: servicesError } = await supabase
-        .from('services')
-        .select('status, created_at');
-
-      if (servicesError) {
-        console.error('Erro ao buscar serviços:', servicesError);
-        // Não vamos falhar se a tabela não existir
-      }
-
-      const totalServices = servicesData?.length || 0;
-      const activeServices = servicesData?.filter(s => s.status === 'active').length || 0;
-
-      // 4. Buscar estatísticas de implementações
+      // 3. Buscar estatísticas de implementações para calcular serviços ativos
       const { data: implementationsData, error: implementationsError } = await supabase
         .from('user_implementation_progress')
-        .select('status, created_at');
+        .select('user_id, status, created_at');
 
       if (implementationsError) {
         console.error('Erro ao buscar implementações:', implementationsError);
         // Não vamos falhar se a tabela não existir
       }
 
+      // Calcular serviços ativos baseado em implementações 100% completas
+      let totalServices = 0;
+      let activeServices = 0;
+
+      if (implementationsData && implementationsData.length > 0) {
+        // Agrupar por usuário para calcular progresso
+        const userProgressMap = new Map<string, any[]>();
+        
+        implementationsData.forEach(impl => {
+          if (!userProgressMap.has(impl.user_id)) {
+            userProgressMap.set(impl.user_id, []);
+          }
+          userProgressMap.get(impl.user_id)!.push(impl);
+        });
+
+        // Calcular quantos usuários têm 100% de progresso
+        totalServices = userProgressMap.size;
+        
+        // Assumindo que temos 5 etapas padrão (como definido no AdminImplementation)
+        const totalSteps = 5;
+        
+        activeServices = Array.from(userProgressMap.values()).filter(userSteps => {
+          const completedSteps = userSteps.filter(step => step.status === 'completed').length;
+          return completedSteps === totalSteps; // 100% completo
+        }).length;
+      }
+
+      // 4. Calcular estatísticas de implementações (usando dados já buscados)
       const totalImplementations = implementationsData?.length || 0;
       const activeImplementations = implementationsData?.filter(i => i.status === 'in_progress').length || 0;
 
