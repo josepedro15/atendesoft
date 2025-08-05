@@ -88,8 +88,7 @@ const AdminImplementation = () => {
   const [loadingUsers, setLoadingUsers] = useState(false);
   const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set());
   const [showDetailsDialog, setShowDetailsDialog] = useState<string | null>(null);
-  const [currentTab, setCurrentTab] = useState<'in-progress' | 'completed'>('in-progress');
-  const [forceUpdate, setForceUpdate] = useState(0);
+
   const { toast } = useToast();
   const { isAdmin, isInitialized } = useAuth();
 
@@ -105,12 +104,7 @@ const AdminImplementation = () => {
     }
   }, [showAddClientDialog]);
 
-  // Monitorar mudanças no currentTab
-  useEffect(() => {
-    console.log('🔥 currentTab MUDOU PARA:', currentTab);
-    console.log('🔥 Renderizando conteúdo da aba:', currentTab);
-    console.log('🔥 Force update count:', forceUpdate);
-  }, [currentTab, forceUpdate]);
+
 
   const fetchData = async () => {
     try {
@@ -343,9 +337,7 @@ const AdminImplementation = () => {
     return Math.round((completedSteps / steps.length) * 100);
   };
 
-  // Separar clientes por status
-  const clientsInProgress = clients.filter(client => getProgressPercentage(client) < 100);
-  const clientsCompleted = clients.filter(client => getProgressPercentage(client) === 100);
+
 
   const toggleCardExpansion = (clientId: string) => {
     setExpandedCards(prev => {
@@ -436,326 +428,121 @@ const AdminImplementation = () => {
         </div>
       </div>
 
-      {/* Abas Ultra-Simples */}
+      {/* Lista de Clientes - Sem Abas */}
       <div className="w-full">
-        <div className="grid w-full grid-cols-2 gap-2 mb-6">
-          <div
-            onClick={() => {
-              console.log('🔥 CLIQUE EM ANDAMENTO DETECTADO!');
-              console.log('🔥 Estado atual:', currentTab);
-              setCurrentTab('in-progress');
-              setForceUpdate(prev => prev + 1);
-              console.log('🔥 Estado definido para: in-progress');
-              console.log('🔥 Forçando re-renderização...');
-            }}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '8px',
-              padding: '8px 16px',
-              borderRadius: '8px',
-              fontWeight: '500',
-              cursor: 'pointer',
-              transition: 'all 0.2s',
-              backgroundColor: currentTab === 'in-progress' ? '#3b82f6' : '#374151',
-              color: currentTab === 'in-progress' ? 'white' : '#9ca3af',
-              boxShadow: currentTab === 'in-progress' ? '0 4px 6px -1px rgba(0, 0, 0, 0.1)' : 'none'
-            }}
-            onMouseEnter={(e) => {
-              if (currentTab !== 'in-progress') {
-                e.currentTarget.style.backgroundColor = '#4b5563';
-              }
-            }}
-            onMouseLeave={(e) => {
-              if (currentTab !== 'in-progress') {
-                e.currentTarget.style.backgroundColor = '#374151';
-              }
-            }}
-          >
-            <Play style={{ width: '16px', height: '16px' }} />
-            Em Andamento ({clientsInProgress.length})
+        {loading ? (
+          <div className="flex items-center justify-center p-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
           </div>
-          <div
-            onClick={() => {
-              console.log('🔥 CLIQUE CONCLUÍDOS DETECTADO!');
-              console.log('🔥 Estado atual:', currentTab);
-              setCurrentTab('completed');
-              setForceUpdate(prev => prev + 1);
-              console.log('🔥 Estado definido para: completed');
-              console.log('🔥 Forçando re-renderização...');
-            }}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '8px',
-              padding: '8px 16px',
-              borderRadius: '8px',
-              fontWeight: '500',
-              cursor: 'pointer',
-              transition: 'all 0.2s',
-              backgroundColor: currentTab === 'completed' ? '#3b82f6' : '#374151',
-              color: currentTab === 'completed' ? 'white' : '#9ca3af',
-              boxShadow: currentTab === 'completed' ? '0 4px 6px -1px rgba(0, 0, 0, 0.1)' : 'none'
-            }}
-            onMouseEnter={(e) => {
-              if (currentTab !== 'completed') {
-                e.currentTarget.style.backgroundColor = '#4b5563';
-              }
-            }}
-            onMouseLeave={(e) => {
-              if (currentTab !== 'completed') {
-                e.currentTarget.style.backgroundColor = '#374151';
-              }
-            }}
-          >
-            <CheckCircle style={{ width: '16px', height: '16px' }} />
-            Concluídos ({clientsCompleted.length})
-          </div>
-        </div>
-
-        {/* Conteúdo das Abas */}
-        {currentTab === 'in-progress' && (
-          <div key={`in-progress-${forceUpdate}`}>
-          <div>
-            {loading ? (
-              <div className="flex items-center justify-center p-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        ) : clients.length === 0 ? (
+          <Card className="card-glass">
+            <CardContent className="p-8">
+              <div className="text-center space-y-4">
+                <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
+                  <Users className="h-8 w-8 text-primary" />
+                </div>
+                <h3 className="text-xl font-semibold">Nenhum cliente encontrado</h3>
+                <p className="text-muted-foreground">
+                  Adicione clientes para começar a gerenciar implementações.
+                </p>
               </div>
-            ) : clientsInProgress.length === 0 ? (
-              <Card className="card-glass">
-                <CardContent className="p-8">
-                  <div className="text-center space-y-4">
-                    <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
-                      <Play className="h-8 w-8 text-primary" />
-                    </div>
-                    <h3 className="text-xl font-semibold">Nenhum projeto em andamento</h3>
-                    <p className="text-muted-foreground">
-                      Todos os projetos foram concluídos ou ainda não foram iniciados.
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-            ) : (
-              <div className="grid gap-6">
-                {clientsInProgress.map((client) => (
-                  <Card key={client.user_id} className="card-glass">
-                    <CardHeader>
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-4">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => toggleCardExpansion(client.user_id)}
-                            className="p-1 h-8 w-8"
-                          >
-                            {isCardExpanded(client.user_id) ? (
-                              <ChevronDown className="h-4 w-4" />
-                            ) : (
-                              <ChevronRight className="h-4 w-4" />
-                            )}
-                          </Button>
-                          <div>
-                            <CardTitle className="text-xl">{client.full_name}</CardTitle>
-                            <CardDescription>{client.company}</CardDescription>
-                            <p className="text-sm text-muted-foreground mt-1">{client.email}</p>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <div className="text-right">
-                            <div className="text-2xl font-bold text-primary">
-                              {getProgressPercentage(client)}%
-                            </div>
-                            <div className="text-sm text-muted-foreground">Progresso Geral</div>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleDetalhesClick(client.user_id)}
-                              className="flex items-center gap-2"
-                            >
-                              <Info className="h-4 w-4" />
-                              Detalhes
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleConfigurarClick(client.user_id)}
-                              className="flex items-center gap-2"
-                            >
-                              <Settings className="h-4 w-4" />
-                              Configurar
-                            </Button>
-                          </div>
-                        </div>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="grid gap-6">
+            {clients.map((client) => (
+              <Card key={client.user_id} className="card-glass">
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => toggleCardExpansion(client.user_id)}
+                        className="p-1 h-8 w-8"
+                      >
+                        {isCardExpanded(client.user_id) ? (
+                          <ChevronDown className="h-4 w-4" />
+                        ) : (
+                          <ChevronRight className="h-4 w-4" />
+                        )}
+                      </Button>
+                      <div>
+                        <CardTitle className="text-xl">{client.full_name}</CardTitle>
+                        <CardDescription>{client.company}</CardDescription>
+                        <p className="text-sm text-muted-foreground mt-1">{client.email}</p>
                       </div>
-                    </CardHeader>
-                    
-                    {isCardExpanded(client.user_id) && (
-                      <CardContent>
-                        <div className="space-y-4">
-                          {steps.map((step) => {
-                            const progress = client.progress.find(p => p.step_id === step.id);
-                            const status = progress?.status || 'pending';
-                            
-                            return (
-                              <div key={step.id} className="flex items-center justify-between p-3 rounded-lg border border-border/50">
-                                <div className="flex items-center gap-3">
-                                  {getStatusIcon(status)}
-                                  <div>
-                                    <h4 className="font-medium">{step.title}</h4>
-                                    <p className="text-sm text-muted-foreground">{step.description}</p>
-                                    {progress?.notes && (
-                                      <p className="text-xs text-muted-foreground mt-1 italic">
-                                        {progress.notes}
-                                      </p>
-                                    )}
-                                  </div>
-                                </div>
-                                <div className="flex items-center gap-3">
-                                  {getStatusBadge(status)}
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => setEditingProgress(progress || { id: 'new', user_id: client.user_id, step_id: step.id, status: 'pending', step } as UserProgress)}
-                                  >
-                                    <Edit className="h-4 w-4" />
-                                  </Button>
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </CardContent>
-                    )}
-                  </Card>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-        )}
-
-        {currentTab === 'completed' && (
-          <div key={`completed-${forceUpdate}`}>
-            {loading ? (
-              <div className="flex items-center justify-center p-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-              </div>
-            ) : clientsCompleted.length === 0 ? (
-              <Card className="card-glass">
-                <CardContent className="p-8">
-                  <div className="text-center space-y-4">
-                    <div className="h-16 w-16 rounded-full bg-green-500/10 flex items-center justify-center mx-auto">
-                      <CheckCircle className="h-8 w-8 text-green-500" />
                     </div>
-                    <h3 className="text-xl font-semibold">Nenhum projeto concluído</h3>
-                    <p className="text-muted-foreground">
-                      Todos os projetos ainda estão em andamento.
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-            ) : (
-              <div className="grid gap-6">
-                {clientsCompleted.map((client) => (
-                  <Card key={client.user_id} className="card-glass border-green-500/20">
-                    <CardHeader>
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-4">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => toggleCardExpansion(client.user_id)}
-                            className="p-1 h-8 w-8"
-                          >
-                            {isCardExpanded(client.user_id) ? (
-                              <ChevronDown className="h-4 w-4" />
-                            ) : (
-                              <ChevronRight className="h-4 w-4" />
-                            )}
-                          </Button>
-                          <div>
-                            <CardTitle className="text-xl">{client.full_name}</CardTitle>
-                            <CardDescription>{client.company}</CardDescription>
-                            <p className="text-sm text-muted-foreground mt-1">{client.email}</p>
-                          </div>
+                    <div className="flex items-center gap-3">
+                      <div className="text-right">
+                        <div className="text-2xl font-bold text-primary">
+                          {getProgressPercentage(client)}%
                         </div>
-                        <div className="flex items-center gap-3">
-                          <div className="text-right">
-                            <div className="text-2xl font-bold text-green-500 flex items-center gap-1">
-                              <CheckCircle className="h-5 w-5" />
-                              100%
-                            </div>
-                            <div className="text-sm text-muted-foreground">Concluído</div>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleDetalhesClick(client.user_id)}
-                              className="flex items-center gap-2"
-                            >
-                              <Info className="h-4 w-4" />
-                              Detalhes
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleConfigurarClick(client.user_id)}
-                              className="flex items-center gap-2"
-                            >
-                              <Settings className="h-4 w-4" />
-                              Configurar
-                            </Button>
-                          </div>
-                        </div>
+                        <div className="text-sm text-muted-foreground">Progresso Geral</div>
                       </div>
-                    </CardHeader>
-                    
-                    {isCardExpanded(client.user_id) && (
-                      <CardContent>
-                        <div className="space-y-4">
-                          {steps.map((step) => {
-                            const progress = client.progress.find(p => p.step_id === step.id);
-                            const status = progress?.status || 'pending';
-                            
-                            return (
-                              <div key={step.id} className="flex items-center justify-between p-3 rounded-lg border border-border/50">
-                                <div className="flex items-center gap-3">
-                                  {getStatusIcon(status)}
-                                  <div>
-                                    <h4 className="font-medium">{step.title}</h4>
-                                    <p className="text-sm text-muted-foreground">{step.description}</p>
-                                    {progress?.notes && (
-                                      <p className="text-xs text-muted-foreground mt-1 italic">
-                                        {progress.notes}
-                                      </p>
-                                    )}
-                                  </div>
-                                </div>
-                                <div className="flex items-center gap-3">
-                                  {getStatusBadge(status)}
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => setEditingProgress(progress || { id: 'new', user_id: client.user_id, step_id: step.id, status: 'pending', step } as UserProgress)}
-                                  >
-                                    <Edit className="h-4 w-4" />
-                                  </Button>
-                                </div>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleDetalhesClick(client.user_id)}
+                          className="flex items-center gap-2"
+                        >
+                          <Info className="h-4 w-4" />
+                          Detalhes
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleConfigurarClick(client.user_id)}
+                          className="flex items-center gap-2"
+                        >
+                          <Settings className="h-4 w-4" />
+                          Configurar
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </CardHeader>
+                
+                {isCardExpanded(client.user_id) && (
+                  <CardContent>
+                    <div className="space-y-4">
+                      {steps.map((step) => {
+                        const progress = client.progress.find(p => p.step_id === step.id);
+                        const status = progress?.status || 'pending';
+                        
+                        return (
+                          <div key={step.id} className="flex items-center justify-between p-3 rounded-lg border border-border/50">
+                            <div className="flex items-center gap-3">
+                              {getStatusIcon(status)}
+                              <div>
+                                <h4 className="font-medium">{step.title}</h4>
+                                <p className="text-sm text-muted-foreground">{step.description}</p>
+                                {progress?.notes && (
+                                  <p className="text-xs text-muted-foreground mt-1 italic">
+                                    {progress.notes}
+                                  </p>
+                                )}
                               </div>
-                            );
-                          })}
-                        </div>
-                      </CardContent>
-                    )}
-                  </Card>
-                ))}
-              </div>
-            )}
+                            </div>
+                            <div className="flex items-center gap-3">
+                              {getStatusBadge(status)}
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setEditingProgress(progress || { id: 'new', user_id: client.user_id, step_id: step.id, status: 'pending', step } as UserProgress)}
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </CardContent>
+                )}
+              </Card>
+            ))}
           </div>
         )}
       </div>
