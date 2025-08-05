@@ -201,20 +201,20 @@ export const useDashboard = () => {
                payment.status === 'paid';
       }) || [];
 
-      const monthlyRevenue = currentMonthPayments.reduce((sum, p) => sum + parseFloat(p.amount || '0'), 0);
+      const monthlyRevenue = currentMonthPayments.reduce((sum, payment) => sum + parseFloat(payment.amount || '0'), 0);
 
       // 6. Calcular crescimento mensal (simplificado)
       const lastMonth = currentMonth === 0 ? 11 : currentMonth - 1;
       const lastMonthYear = currentMonth === 0 ? currentYear - 1 : currentYear;
       
-      const lastMonthPayments = paymentsData?.filter(p => {
-        const paymentDate = p.paid_date ? new Date(p.paid_date) : new Date(p.created_at);
+      const lastMonthPayments = paymentsData?.filter(payment => {
+        const paymentDate = payment.paid_date ? new Date(payment.paid_date) : new Date(payment.created_at);
         return paymentDate.getMonth() === lastMonth && 
                paymentDate.getFullYear() === lastMonthYear &&
-               p.status === 'paid';
+               payment.status === 'paid';
       }) || [];
 
-      const lastMonthRevenue = lastMonthPayments.reduce((sum, p) => sum + parseFloat(p.amount || '0'), 0);
+      const lastMonthRevenue = lastMonthPayments.reduce((sum, payment) => sum + parseFloat(payment.amount || '0'), 0);
       const monthlyGrowth = lastMonthRevenue > 0 ? ((monthlyRevenue - lastMonthRevenue) / lastMonthRevenue) * 100 : 0;
 
       const finalStats = {
