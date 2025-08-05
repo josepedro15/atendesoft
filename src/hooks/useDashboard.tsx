@@ -138,9 +138,6 @@ export const useDashboard = () => {
             status: roundedPercentage === 100 ? 'SERVIÇO ATIVO' : 'EM IMPLEMENTAÇÃO'
           });
           
-          // Usar Math.round para evitar problemas de precisão decimal
-          const roundedPercentage = Math.round(progressPercentage);
-          
           if (roundedPercentage === 100) {
             // 100% completo = Serviço Ativo
             activeServices++;
