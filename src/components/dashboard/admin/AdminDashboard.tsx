@@ -150,7 +150,8 @@ const mockQuickActions = [
 
 const AdminDashboard = () => {
   const { isAdmin, isLoading, isInitialized } = useAuth();
-  const { stats, loading: dashboardLoading, error } = useDashboard();
+  // Temporariamente comentado para debug
+  // const { stats, loading: dashboardLoading, error } = useDashboard();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -160,8 +161,8 @@ const AdminDashboard = () => {
     }
   }, [isAdmin, isLoading, isInitialized, navigate]);
 
-  // Mostrar loading enquanto não foi inicializado ou dashboard carregando
-  if (!isInitialized || isLoading || dashboardLoading) {
+  // Mostrar loading enquanto não foi inicializado
+  if (!isInitialized || isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
@@ -204,23 +205,14 @@ const AdminDashboard = () => {
       </div>
 
       {/* Debug: Log dos valores */}
-      {console.log('🔍 AdminDashboard - Valores recebidos:', stats)}
+      {console.log('🔍 AdminDashboard - Debug mode')}
       
-      {/* Cards de Estatísticas */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {generateStats(stats).map((stat) => (
-          <StatsCard
-            key={stat.id}
-            title={stat.title}
-            value={stat.value}
-            description={stat.description}
-            icon={stat.icon}
-            trend={stat.trend}
-            link={stat.link}
-            linkText={stat.linkText}
-            variant={stat.variant}
-          />
-        ))}
+      {/* Cards de Estatísticas - Temporariamente desabilitados */}
+      <div className="text-center p-8 border border-dashed border-primary/20 rounded-lg">
+        <h3 className="text-xl font-bold text-primary mb-4">Dashboard em Modo Debug</h3>
+        <p className="text-muted-foreground">
+          Hooks desabilitados temporariamente para identificar problema de renderização
+        </p>
       </div>
 
       {/* Seção KPI Avançados - Temporariamente desabilitada para debug */}
@@ -244,13 +236,14 @@ const AdminDashboard = () => {
       )}
 
       {/* Mostrar erro se houver */}
-      {error && (
+      {/* Temporariamente comentado para debug */}
+      {/* {error && (
         <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4">
           <p className="text-destructive text-sm">
             Erro ao carregar dados: {error}
           </p>
         </div>
-      )}
+      )} */}
 
       {/* Ações Rápidas */}
       <QuickActions actions={mockQuickActions} />
