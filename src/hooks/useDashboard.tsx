@@ -128,24 +128,24 @@ export const useDashboard = () => {
           const progressPercentage = (completedSteps / totalSteps) * 100;
           
           // Calcular percentual arredondado para evitar problemas de precisão decimal
-          const roundedPercentage = Math.round(progressPercentage);
+          const progressRounded = Math.round(progressPercentage);
           
           console.log(`👤 Usuário ${userId}:`, {
             totalSteps,
             completedSteps,
             progressPercentage: `${progressPercentage}%`,
-            roundedPercentage: `${roundedPercentage}%`,
-            status: roundedPercentage === 100 ? 'SERVIÇO ATIVO' : 'EM IMPLEMENTAÇÃO'
+            progressRounded: `${progressRounded}%`,
+            status: progressRounded === 100 ? 'SERVIÇO ATIVO' : 'EM IMPLEMENTAÇÃO'
           });
           
-          if (roundedPercentage === 100) {
+          if (progressRounded === 100) {
             // 100% completo = Serviço Ativo
             activeServices++;
-            console.log(`✅ Usuário ${userId} -> Serviço Ativo (${roundedPercentage}%)`);
+            console.log(`✅ Usuário ${userId} -> Serviço Ativo (${progressRounded}%)`);
           } else {
             // < 100% = Projeto em Implementação
             activeImplementations++;
-            console.log(`🔄 Usuário ${userId} -> Em Implementação (${roundedPercentage}%)`);
+            console.log(`🔄 Usuário ${userId} -> Em Implementação (${progressRounded}%)`);
           }
         });
         
