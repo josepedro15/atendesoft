@@ -661,6 +661,127 @@ const AdminImplementation = () => {
             </Card>
           ))}
         </div>
+        </TabsContent>
+
+        <TabsContent value="completed" className="mt-6">
+          {loading ? (
+            <div className="flex items-center justify-center p-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            </div>
+          ) : clientsCompleted.length === 0 ? (
+            <Card className="card-glass">
+              <CardContent className="p-8">
+                <div className="text-center space-y-4">
+                  <div className="h-16 w-16 rounded-full bg-green-500/10 flex items-center justify-center mx-auto">
+                    <CheckCircle className="h-8 w-8 text-green-500" />
+                  </div>
+                  <h3 className="text-xl font-semibold">Nenhum projeto concluído</h3>
+                  <p className="text-muted-foreground">
+                    Todos os projetos ainda estão em andamento.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid gap-6">
+              {clientsCompleted.map((client) => (
+                <Card key={client.user_id} className="card-glass border-green-500/20">
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => toggleCardExpansion(client.user_id)}
+                          className="p-1 h-8 w-8"
+                        >
+                          {isCardExpanded(client.user_id) ? (
+                            <ChevronDown className="h-4 w-4" />
+                          ) : (
+                            <ChevronRight className="h-4 w-4" />
+                          )}
+                        </Button>
+                        <div>
+                          <CardTitle className="text-xl">{client.full_name}</CardTitle>
+                          <CardDescription>{client.company}</CardDescription>
+                          <p className="text-sm text-muted-foreground mt-1">{client.email}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <div className="text-right">
+                          <div className="text-2xl font-bold text-green-500 flex items-center gap-1">
+                            <CheckCircle className="h-5 w-5" />
+                            100%
+                          </div>
+                          <div className="text-sm text-muted-foreground">Concluído</div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setShowDetailsDialog(client.user_id)}
+                            className="flex items-center gap-2"
+                          >
+                            <Info className="h-4 w-4" />
+                            Detalhes
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setShowDetailsDialog(client.user_id)}
+                            className="flex items-center gap-2"
+                          >
+                            <Settings className="h-4 w-4" />
+                            Configurar
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  
+                  {isCardExpanded(client.user_id) && (
+                    <CardContent>
+                      <div className="space-y-4">
+                        {steps.map((step) => {
+                          const progress = client.progress.find(p => p.step_id === step.id);
+                          const status = progress?.status || 'pending';
+                          
+                          return (
+                            <div key={step.id} className="flex items-center justify-between p-3 rounded-lg border border-border/50">
+                              <div className="flex items-center gap-3">
+                                {getStatusIcon(status)}
+                                <div>
+                                  <h4 className="font-medium">{step.title}</h4>
+                                  <p className="text-sm text-muted-foreground">{step.description}</p>
+                                  {progress?.notes && (
+                                    <p className="text-xs text-muted-foreground mt-1 italic">
+                                      "{progress.notes}"
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-3">
+                                {getStatusBadge(status)}
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => setEditingProgress(progress || { id: 'new', user_id: client.user_id, step_id: step.id, status: 'pending', step } as UserProgress)}
+                                >
+                                  <Edit className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </CardContent>
+                  )}
+                </Card>
+              ))}
+            </div>
+          )}
+        </TabsContent>
+      </Tabs>
       )}
 
       {/* Dialog para adicionar cliente */}
