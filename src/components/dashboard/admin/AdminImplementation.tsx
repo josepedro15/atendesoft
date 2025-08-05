@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CheckCircle, Clock, Play, Edit, Plus, Users, GitBranch, RefreshCw, ChevronDown, ChevronRight, Info, Settings } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
@@ -446,6 +447,10 @@ const AdminImplementation = () => {
     return Math.round((completedSteps / steps.length) * 100);
   };
 
+  // Separar clientes por status
+  const clientsInProgress = clients.filter(client => getProgressPercentage(client) < 100);
+  const clientsCompleted = clients.filter(client => getProgressPercentage(client) === 100);
+
   const toggleCardExpansion = (clientId: string) => {
     setExpandedCards(prev => {
       const newSet = new Set(prev);
@@ -528,79 +533,93 @@ const AdminImplementation = () => {
         </div>
       </div>
 
-      {/* Lista de Clientes */}
-      {loading ? (
-        <div className="flex items-center justify-center p-8">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-        </div>
-      ) : clients.length === 0 ? (
-        <Card className="card-glass">
-          <CardContent className="p-8">
-            <div className="text-center space-y-4">
-              <div className="text-6xl">👥</div>
-              <h3 className="text-xl font-semibold">Nenhuma implementação encontrada</h3>
-              <p className="text-muted-foreground mb-6">
-                Não há clientes com implementação em andamento. 
-                Clique em "Adicionar Cliente" para iniciar uma nova implementação.
-              </p>
+      {/* Abas de Implementações */}
+      <Tabs defaultValue="in-progress" className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="in-progress" className="flex items-center gap-2">
+            <Play className="h-4 w-4" />
+            Em Andamento ({clientsInProgress.length})
+          </TabsTrigger>
+          <TabsTrigger value="completed" className="flex items-center gap-2">
+            <CheckCircle className="h-4 w-4" />
+            Concluídos ({clientsCompleted.length})
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="in-progress" className="mt-6">
+          {loading ? (
+            <div className="flex items-center justify-center p-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
             </div>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="grid gap-6">
-          {clients.map((client) => (
-            <Card key={client.user_id} className="card-glass">
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => toggleCardExpansion(client.user_id)}
-                      className="p-1 h-8 w-8"
-                    >
-                      {isCardExpanded(client.user_id) ? (
-                        <ChevronDown className="h-4 w-4" />
-                      ) : (
-                        <ChevronRight className="h-4 w-4" />
-                      )}
-                    </Button>
-                    <div>
-                      <CardTitle className="text-xl">{client.full_name}</CardTitle>
-                      <CardDescription>{client.company}</CardDescription>
-                      <p className="text-sm text-muted-foreground mt-1">{client.email}</p>
-                    </div>
+          ) : clientsInProgress.length === 0 ? (
+            <Card className="card-glass">
+              <CardContent className="p-8">
+                <div className="text-center space-y-4">
+                  <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
+                    <Play className="h-8 w-8 text-primary" />
                   </div>
-                  <div className="flex items-center gap-3">
-                    <div className="text-right">
-                      <div className="text-2xl font-bold text-primary">
-                        {getProgressPercentage(client)}%
-                      </div>
-                      <div className="text-sm text-muted-foreground">Progresso Geral</div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setShowDetailsDialog(client.user_id)}
-                        className="flex items-center gap-2"
-                      >
-                        <Info className="h-4 w-4" />
-                        Detalhes
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setShowDetailsDialog(client.user_id)}
-                        className="flex items-center gap-2"
-                      >
-                        <Settings className="h-4 w-4" />
-                        Configurar
-                      </Button>
-                    </div>
-                  </div>
+                  <h3 className="text-xl font-semibold">Nenhum projeto em andamento</h3>
+                  <p className="text-muted-foreground">
+                    Todos os projetos foram concluídos ou ainda não foram iniciados.
+                  </p>
                 </div>
-              </CardHeader>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid gap-6">
+              {clientsInProgress.map((client) => (
+                <Card key={client.user_id} className="card-glass">
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => toggleCardExpansion(client.user_id)}
+                          className="p-1 h-8 w-8"
+                        >
+                          {isCardExpanded(client.user_id) ? (
+                            <ChevronDown className="h-4 w-4" />
+                          ) : (
+                            <ChevronRight className="h-4 w-4" />
+                          )}
+                        </Button>
+                        <div>
+                          <CardTitle className="text-xl">{client.full_name}</CardTitle>
+                          <CardDescription>{client.company}</CardDescription>
+                          <p className="text-sm text-muted-foreground mt-1">{client.email}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <div className="text-right">
+                          <div className="text-2xl font-bold text-primary">
+                            {getProgressPercentage(client)}%
+                          </div>
+                          <div className="text-sm text-muted-foreground">Progresso Geral</div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setShowDetailsDialog(client.user_id)}
+                            className="flex items-center gap-2"
+                          >
+                            <Info className="h-4 w-4" />
+                            Detalhes
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setShowDetailsDialog(client.user_id)}
+                            className="flex items-center gap-2"
+                          >
+                            <Settings className="h-4 w-4" />
+                            Configurar
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  </CardHeader>
               
               {isCardExpanded(client.user_id) && (
                 <CardContent>
