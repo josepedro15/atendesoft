@@ -159,7 +159,7 @@ const ChurnModal = ({
   const [cancelados, setCancelados] = useState('');
   const [renovados, setRenovados] = useState('');
 
-  const handleSave = () => {
+  const handleSave = React.useCallback(() => {
     const data = {
       clientesInicio: parseInt(clientesInicio),
       cancelados: parseInt(cancelados),
@@ -173,10 +173,17 @@ const ChurnModal = ({
       setCancelados('');
       setRenovados('');
     }
-  };
+  }, [clientesInicio, cancelados, renovados, onSave, onClose]);
+
+  const handleClose = React.useCallback(() => {
+    onClose();
+    setClientesInicio('');
+    setCancelados('');
+    setRenovados('');
+  }, [onClose]);
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Inserir Dados de Churn & Retenção</DialogTitle>
@@ -230,9 +237,17 @@ export const ChurnRetentionCard = () => {
   const { churn } = advancedKPIs;
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const handleSave = async (data: { clientesInicio: number; cancelados: number; renovados: number }) => {
+  const handleSave = React.useCallback(async (data: { clientesInicio: number; cancelados: number; renovados: number }) => {
     await saveChurnData(data);
-  };
+  }, [saveChurnData]);
+
+  const handleOpenModal = React.useCallback(() => {
+    setIsModalOpen(true);
+  }, []);
+
+  const handleCloseModal = React.useCallback(() => {
+    setIsModalOpen(false);
+  }, []);
 
   return (
     <>
@@ -280,7 +295,7 @@ export const ChurnRetentionCard = () => {
       
       <ChurnModal 
         isOpen={isModalOpen} 
-        onClose={() => setIsModalOpen(false)} 
+        onClose={handleCloseModal} 
         onSave={handleSave} 
       />
     </>
