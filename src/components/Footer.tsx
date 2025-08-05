@@ -47,7 +47,7 @@ const Footer = () => {
           {/* Company Info */}
           <div className="space-y-6">
             <div>
-              <h3 className="text-2xl font-bold text-glow text-primary mb-2">Atendesoft</h3>
+              <h3 className="text-2xl font-bold text-glow text-primary mb-2">AtendeSoft</h3>
               <p className="text-muted-foreground leading-relaxed">
                 Transformando negócios com automações inteligentes e tecnologia de ponta. 
                 Seu parceiro em inovação e eficiência.
@@ -128,7 +128,7 @@ const Footer = () => {
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             {/* Copyright */}
             <div className="text-sm text-muted-foreground">
-              © {currentYear} Atendesoft. Todos os direitos reservados.
+              © {currentYear} AtendeSoft. Todos os direitos reservados.
             </div>
             
             {/* Legal Links */}

@@ -88,7 +88,7 @@ const AccountSummary = () => {
           Olá, {profile?.full_name || 'Cliente'}!
         </h1>
         <p className="text-muted-foreground">
-          Bem-vindo ao seu painel de controle da AtendeSSoft
+          Bem-vindo ao seu painel de controle da AtendeSoft
         </p>
       </div>
 

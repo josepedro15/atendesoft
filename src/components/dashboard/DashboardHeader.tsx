@@ -37,26 +37,20 @@ const DashboardHeader = () => {
     <header className="glass border-b border-primary/20 h-16 flex items-center justify-between px-6">
       {/* Logo */}
       <div className="flex items-center gap-3">
-        <div className="flex items-center gap-2 glass rounded-full px-4 py-2">
+        <Button
+          variant="ghost"
+          onClick={() => navigate('/')}
+          className="flex items-center gap-2 glass rounded-full px-4 py-2 hover:bg-primary/10 transition-colors"
+        >
           <Sparkles className="w-5 h-5 text-primary" />
-          <span className="font-bold text-primary text-lg">AtendeSSoft</span>
-        </div>
+          <span className="font-bold text-primary text-lg">AtendeSoft</span>
+        </Button>
         
         {isAdmin && (
           <Badge variant="secondary" className="bg-secondary/20 text-secondary border-secondary/30">
             Admin
           </Badge>
         )}
-        
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => navigate('/')}
-          className="gap-2 border-primary/30 hover:bg-primary/10"
-        >
-          <Home className="h-4 w-4" />
-          Home
-        </Button>
       </div>
 
       {/* User Menu */}
