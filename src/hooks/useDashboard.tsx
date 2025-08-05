@@ -117,8 +117,20 @@ export const useDashboard = () => {
         
         console.log('📊 Mapa de progresso por usuário:', userProgressMap);
 
-        // Assumindo que temos 5 etapas padrão (como definido no AdminImplementation)
-        const totalSteps = 5;
+        // Usar o número real de steps de cada usuário
+        console.log('🔍 Debug - Calculando implementações e serviços:');
+        console.log('Total de usuários com implementação:', userProgressMap.size);
+        
+        console.log('🔍 Debug - Iniciando processamento de usuários...');
+        console.log('🔍 Debug - userProgressMap entries:', Array.from(userProgressMap.entries()));
+        
+        Array.from(userProgressMap.entries()).forEach(([userId, userSteps]) => {
+          console.log(`🔍 Debug - Processando usuário ${userId}:`, userSteps);
+          
+          // Usar o número real de steps deste usuário
+          const totalSteps = userSteps.length;
+          const completedSteps = userSteps.filter(step => step.status === 'completed' || step.status === 'complet').length;
+          const progressPercentage = (completedSteps / totalSteps) * 100;
         
         // Calcular para cada usuário
         console.log('🔍 Debug - Calculando implementações e serviços:');
@@ -144,8 +156,8 @@ export const useDashboard = () => {
             status: progressRounded === 100 ? 'SERVIÇO ATIVO' : 'EM IMPLEMENTAÇÃO'
           });
           
-          if (progressRounded === 100) {
-            // 100% completo = Serviço Ativo
+          if (progressRounded >= 100) {
+            // >= 100% completo = Serviço Ativo
             activeServices++;
             console.log(`✅ Usuário ${userId} -> Serviço Ativo (${progressRounded}%)`);
           } else {
