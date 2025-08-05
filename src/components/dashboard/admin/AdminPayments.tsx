@@ -301,6 +301,50 @@ const AdminPayments = () => {
     return new Date(date).toLocaleDateString('pt-BR');
   };
 
+  // Mostrar loading enquanto não foi inicializado
+  if (!isInitialized) {
+    return (
+      <div className="space-y-6 p-6">
+        {/* Header Skeleton */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="h-10 w-10 rounded-lg bg-muted animate-pulse"></div>
+            <div className="space-y-2">
+              <div className="h-8 w-64 bg-muted rounded animate-pulse"></div>
+              <div className="h-4 w-48 bg-muted rounded animate-pulse"></div>
+            </div>
+          </div>
+          <div className="h-10 w-32 bg-muted rounded animate-pulse"></div>
+        </div>
+
+        {/* Stats Skeleton */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="card-glass">
+              <div className="space-y-2">
+                <div className="h-4 w-24 bg-muted rounded animate-pulse"></div>
+                <div className="h-8 w-20 bg-muted rounded animate-pulse"></div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Table Skeleton */}
+        <div className="card-glass">
+          <div className="space-y-4">
+            <div className="h-6 w-48 bg-muted rounded animate-pulse"></div>
+            <div className="h-4 w-64 bg-muted rounded animate-pulse"></div>
+            <div className="space-y-3">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="h-12 w-full bg-muted rounded animate-pulse"></div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   // Verificar se é admin
   if (!isAdmin) {
     return (
@@ -308,18 +352,6 @@ const AdminPayments = () => {
         <div className="text-center">
           <h2 className="text-2xl font-bold text-glow text-primary">Acesso Negado</h2>
           <p className="text-muted-foreground mt-2">Você não tem permissão para acessar esta página</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Mostrar loading enquanto não foi inicializado
-  if (!isInitialized) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-4 text-muted-foreground">Carregando pagamentos...</p>
         </div>
       </div>
     );

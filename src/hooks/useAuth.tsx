@@ -24,6 +24,8 @@ export const useAuth = () => {
 
   const fetchUserData = useCallback(async (userId: string) => {
     try {
+      console.log('Fetching user data for:', userId);
+      
       // Buscar perfil do usuário
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
@@ -35,6 +37,7 @@ export const useAuth = () => {
         console.error('Erro ao buscar perfil:', profileError);
         setProfile(null);
       } else {
+        console.log('Profile data:', profileData);
         setProfile(profileData);
       }
 
@@ -49,6 +52,7 @@ export const useAuth = () => {
         console.error('Erro ao buscar role:', roleError);
         setUserRole('user');
       } else {
+        console.log('Role data:', roleData);
         setUserRole(roleData?.role || 'user');
       }
     } catch (error) {
@@ -63,8 +67,12 @@ export const useAuth = () => {
 
     const initializeAuth = async () => {
       try {
+        console.log('Initializing auth...');
+        
         // Verificar sessão existente primeiro
         const { data: { session: currentSession } } = await supabase.auth.getSession();
+        
+        console.log('Current session:', currentSession ? 'exists' : 'null');
         
         if (!mounted) return;
 
@@ -72,8 +80,10 @@ export const useAuth = () => {
         setUser(currentSession?.user ?? null);
         
         if (currentSession?.user) {
+          console.log('User found, fetching data...');
           await fetchUserData(currentSession.user.id);
         } else {
+          console.log('No user found, setting defaults...');
           setProfile(null);
           setUserRole('user');
         }
@@ -85,6 +95,7 @@ export const useAuth = () => {
         }
       } finally {
         if (mounted) {
+          console.log('Auth initialization complete');
           setIsLoading(false);
           setIsInitialized(true);
         }
@@ -94,33 +105,46 @@ export const useAuth = () => {
     // Configurar listener de auth
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, newSession) => {
+        console.log('Auth state change:', event, newSession ? 'session exists' : 'no session');
+        
         if (!mounted) return;
         
         setSession(newSession);
         setUser(newSession?.user ?? null);
         
         if (newSession?.user) {
+          console.log('New user session, fetching data...');
           await fetchUserData(newSession.user.id);
         } else {
+          console.log('No user session, clearing data...');
           setProfile(null);
           setUserRole('user');
         }
         
-        if (!isInitialized) {
-          setIsLoading(false);
-          setIsInitialized(true);
-        }
+        // Sempre marcar como inicializado após mudança de auth
+        setIsLoading(false);
+        setIsInitialized(true);
       }
     );
 
     // Inicializar auth
     initializeAuth();
 
+    // Timeout de segurança para evitar loading infinito
+    const timeout = setTimeout(() => {
+      if (mounted && !isInitialized) {
+        console.warn('Auth initialization timeout - forcing initialization');
+        setIsLoading(false);
+        setIsInitialized(true);
+      }
+    }, 5000); // 5 segundos
+
     return () => {
       mounted = false;
       subscription.unsubscribe();
+      clearTimeout(timeout);
     };
-  }, [fetchUserData]);
+  }, [fetchUserData, isInitialized]);
 
   const signOut = async () => {
     try {
