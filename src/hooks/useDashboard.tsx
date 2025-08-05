@@ -130,7 +130,7 @@ export const useDashboard = () => {
         Array.from(userProgressMap.entries()).forEach(([userId, userSteps]) => {
           console.log(`🔍 Debug - Processando usuário ${userId}:`, userSteps);
           
-          const completedSteps = userSteps.filter(step => step.status === 'completed').length;
+          const completedSteps = userSteps.filter(step => step.status === 'completed' || step.status === 'complet').length;
           const progressPercentage = (completedSteps / totalSteps) * 100;
           
           // Calcular percentual arredondado para evitar problemas de precisão decimal
