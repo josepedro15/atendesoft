@@ -41,21 +41,34 @@ export const useAuth = () => {
         setProfile(profileData);
       }
 
-      // Buscar role do usuário - usar RPC se disponível, senão usar query direta
+      // Buscar role do usuário usando a função has_role
       try {
-        const { data: roleData, error: roleError } = await supabase
-          .from('user_roles')
-          .select('role')
-          .eq('user_id', userId)
-          .single();
+        console.log('Checking if user is admin...');
+        const { data: isAdminData, error: isAdminError } = await supabase
+          .rpc('has_role', {
+            user_id: userId,
+            role_name: 'admin'
+          });
 
-        if (roleError && roleError.code !== 'PGRST116') {
-          console.error('Erro ao buscar role:', roleError);
-          // Se não conseguir buscar role, assumir como user
-          setUserRole('user');
+        if (isAdminError) {
+          console.error('Erro ao verificar se é admin:', isAdminError);
+          // Fallback: buscar diretamente da tabela
+          const { data: roleData, error: roleError } = await supabase
+            .from('user_roles')
+            .select('role')
+            .eq('user_id', userId)
+            .single();
+
+          if (roleError && roleError.code !== 'PGRST116') {
+            console.error('Erro ao buscar role (fallback):', roleError);
+            setUserRole('user');
+          } else {
+            console.log('Role data (fallback):', roleData);
+            setUserRole(roleData?.role || 'user');
+          }
         } else {
-          console.log('Role data:', roleData);
-          setUserRole(roleData?.role || 'user');
+          console.log('Is admin check result:', isAdminData);
+          setUserRole(isAdminData ? 'admin' : 'user');
         }
       } catch (roleError) {
         console.error('Erro ao buscar role (fallback):', roleError);
@@ -200,7 +213,8 @@ export const useAuth = () => {
     isLoading,
     isInitialized,
     userRole,
-    profile: !!profile
+    profile: !!profile,
+    userId: user?.id
   });
 
   return {
