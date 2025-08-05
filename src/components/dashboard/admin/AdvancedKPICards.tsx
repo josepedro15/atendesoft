@@ -51,8 +51,8 @@ const Sparkline = ({ data }: { data: number[] }) => {
   );
 };
 
-// Card MRR
-export const MRRCard = () => {
+// Card MRR - Versão otimizada
+export const MRRCard = React.memo(() => {
   const { advancedKPIs, loading } = useAdvancedKPIs();
   const { mrr } = advancedKPIs;
   
@@ -110,8 +110,8 @@ export const MRRCard = () => {
   );
 };
 
-// Card ARR
-export const ARRCard = () => {
+// Card ARR - Versão otimizada
+export const ARRCard = React.memo(() => {
   const { advancedKPIs } = useAdvancedKPIs();
   const { arr } = advancedKPIs;
   
@@ -231,8 +231,8 @@ const ChurnModal = ({
   );
 };
 
-// Card Churn & Retenção
-export const ChurnRetentionCard = () => {
+// Card Churn & Retenção - Versão otimizada
+export const ChurnRetentionCard = React.memo(() => {
   const { advancedKPIs, saveChurnData } = useAdvancedKPIs();
   const { churn } = advancedKPIs;
   const [isModalOpen, setIsModalOpen] = useState(false);
