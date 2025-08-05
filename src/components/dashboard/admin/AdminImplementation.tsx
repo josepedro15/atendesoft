@@ -561,7 +561,7 @@ const AdminImplementation = () => {
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => setShowDetailsDialog(client.user_id)}
+                            onClick={() => handleDetalhesClick(client.user_id)}
                             className="flex items-center gap-2"
                           >
                             <Info className="h-4 w-4" />
@@ -570,7 +570,7 @@ const AdminImplementation = () => {
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => toggleCardExpansion(client.user_id)}
+                            onClick={() => handleConfigurarClick(client.user_id)}
                             className="flex items-center gap-2"
                           >
                             <Settings className="h-4 w-4" />
@@ -680,7 +680,7 @@ const AdminImplementation = () => {
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => setShowDetailsDialog(client.user_id)}
+                            onClick={() => handleDetalhesClick(client.user_id)}
                             className="flex items-center gap-2"
                           >
                             <Info className="h-4 w-4" />
@@ -689,7 +689,7 @@ const AdminImplementation = () => {
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => toggleCardExpansion(client.user_id)}
+                            onClick={() => handleConfigurarClick(client.user_id)}
                             className="flex items-center gap-2"
                           >
                             <Settings className="h-4 w-4" />
