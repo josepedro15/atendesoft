@@ -554,7 +554,7 @@ const AdminImplementation = () => {
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => setShowDetailsDialog(client.user_id)}
+                            onClick={() => toggleCardExpansion(client.user_id)}
                             className="flex items-center gap-2"
                           >
                             <Settings className="h-4 w-4" />
@@ -673,7 +673,7 @@ const AdminImplementation = () => {
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => setShowDetailsDialog(client.user_id)}
+                            onClick={() => toggleCardExpansion(client.user_id)}
                             className="flex items-center gap-2"
                           >
                             <Settings className="h-4 w-4" />
@@ -939,4 +939,4 @@ const AdminImplementation = () => {
   );
 };
 
-export default AdminImplementation;
+export default AdminImplementation; 
