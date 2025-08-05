@@ -212,6 +212,21 @@ export const useDashboard = () => {
       
       console.log('💰 Debug - Mês anterior:', lastMonth, 'Ano anterior:', lastMonthYear);
       
+      // Debug: Verificar todos os pagamentos para entender a distribuição
+      console.log('💰 Debug - Todos os pagamentos disponíveis:');
+      paymentsData?.forEach(payment => {
+        const paymentDate = payment.paid_date ? new Date(payment.paid_date) : new Date(payment.created_at);
+        console.log('💰 Debug - Pagamento:', {
+          amount: payment.amount,
+          status: payment.status,
+          paid_date: payment.paid_date,
+          created_at: payment.created_at,
+          paymentDate: paymentDate,
+          month: paymentDate.getMonth(),
+          year: paymentDate.getFullYear()
+        });
+      });
+      
       const lastMonthPayments = paymentsData?.filter(payment => {
         const paymentDate = payment.paid_date ? new Date(payment.paid_date) : new Date(payment.created_at);
         const isLastMonth = paymentDate.getMonth() === lastMonth && 
