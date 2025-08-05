@@ -193,12 +193,12 @@ export const useDashboard = () => {
         console.log('- activeImplementations:', activeImplementations);
       }
 
-      // 5. Calcular receita mensal (atualizado)
-      const currentMonthPayments = paymentsData?.filter(p => {
-        const paymentDate = p.paid_date ? new Date(p.paid_date) : new Date(p.created_at);
+      // 5. Calcular receita mensal (versão corrigida)
+      const currentMonthPayments = paymentsData?.filter(payment => {
+        const paymentDate = payment.paid_date ? new Date(payment.paid_date) : new Date(payment.created_at);
         return paymentDate.getMonth() === currentMonth && 
                paymentDate.getFullYear() === currentYear &&
-               p.status === 'paid';
+               payment.status === 'paid';
       }) || [];
 
       const monthlyRevenue = currentMonthPayments.reduce((sum, p) => sum + parseFloat(p.amount || '0'), 0);
