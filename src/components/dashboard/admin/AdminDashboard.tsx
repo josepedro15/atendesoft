@@ -41,7 +41,7 @@ const generateStats = (stats: any) => [
   {
     id: '2',
     title: 'Projetos em Implementação',
-    value: stats.totalImplementations,
+    value: stats.activeImplementations,
     description: `${stats.activeImplementations} em progresso`,
     icon: <GitBranch className="h-4 w-4" />,
     link: '/dashboard/admin-implementation',
@@ -69,8 +69,8 @@ const generateStats = (stats: any) => [
   {
     id: '5',
     title: 'Serviços Ativos',
-    value: stats.totalServices,
-    description: `${stats.activeServices} ativos, ${stats.totalServices - stats.activeServices} pendentes`,
+    value: stats.activeServices,
+    description: `${stats.activeServices} ativos`,
     icon: <Layers className="h-4 w-4" />,
     link: '/dashboard/admin-services',
     linkText: 'Ver serviços'

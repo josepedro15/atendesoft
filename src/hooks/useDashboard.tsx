@@ -156,8 +156,8 @@ export const useDashboard = () => {
             status: progressRounded === 100 ? 'SERVIÇO ATIVO' : 'EM IMPLEMENTAÇÃO'
           });
           
-          if (progressRounded >= 100) {
-            // >= 100% completo = Serviço Ativo
+          if (progressRounded === 100) {
+            // Exatamente 100% completo = Serviço Ativo
             activeServices++;
             console.log(`✅ Usuário ${userId} -> Serviço Ativo (${progressRounded}%)`);
           } else {
