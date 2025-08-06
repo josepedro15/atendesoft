@@ -11,6 +11,7 @@ import {
 import { LogOut, User, Settings, Sparkles, Home } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 
 const DashboardHeader = () => {
   const { user, profile, userRole, isAdmin, signOut } = useAuth();
@@ -53,8 +54,12 @@ const DashboardHeader = () => {
         )}
       </div>
 
-      {/* User Menu */}
-      <DropdownMenu>
+      {/* Theme Toggle */}
+      <div className="flex items-center gap-2">
+        <ThemeToggle />
+        
+        {/* User Menu */}
+        <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" className="relative h-10 w-10 rounded-full">
             <Avatar className="h-10 w-10 border-2 border-primary/20">
@@ -104,6 +109,7 @@ const DashboardHeader = () => {
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
+      </div>
     </header>
   );
 };

@@ -67,6 +67,63 @@
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     --transition-bounce: all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
   }
+
+  .light {
+    /* Base Colors - Light Theme */
+    --background: 0 0% 100%;           /* Pure white */
+    --foreground: 220 13% 6%;          /* Dark text */
+
+    --card: 0 0% 98%;                  /* Light gray */
+    --card-foreground: 220 13% 6%;     /* Dark text */
+
+    --popover: 0 0% 98%;
+    --popover-foreground: 220 13% 6%;
+
+    /* Blue Primary */
+    --primary: 200 100% 50%;           /* Bright blue */
+    --primary-foreground: 0 0% 100%;   /* White text */
+    --primary-glow: 200 100% 70%;      /* Lighter blue */
+
+    /* Orange Secondary */
+    --secondary: 25 100% 55%;          /* Vibrant orange */
+    --secondary-foreground: 0 0% 100%;
+    --secondary-glow: 25 100% 70%;     /* Lighter orange */
+
+    /* Muted Colors */
+    --muted: 0 0% 96%;                 /* Light muted */
+    --muted-foreground: 220 9% 45%;    /* Dark gray text */
+
+    /* Accent Colors */
+    --accent: 280 100% 60%;            /* Purple accent */
+    --accent-foreground: 0 0% 100%;
+
+    /* Glass Effect */
+    --glass: 0 0% 98%;                 /* Semi-transparent light */
+    --glass-border: 200 100% 50%;      /* Blue border */
+
+    /* States */
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --success: 142 71% 45%;
+    --success-foreground: 0 0% 100%;
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 100%;
+
+    --border: 0 0% 90%;                /* Light borders */
+    --input: 0 0% 96%;                 /* Input backgrounds */
+    --ring: 200 100% 50%;              /* Focus rings - blue */
+
+    /* Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(200 100% 50%) 0%, hsl(280 100% 60%) 100%);
+    --gradient-secondary: linear-gradient(135deg, hsl(25 100% 55%) 0%, hsl(0 84% 60%) 100%);
+    --gradient-dark: linear-gradient(180deg, hsl(0 0% 100%) 0%, hsl(0 0% 96%) 100%);
+    --gradient-glow: radial-gradient(600px at 50% 50%, hsl(200 100% 50% / 0.1), transparent 80%);
+
+    /* Shadows & Glows */
+    --shadow-neon-blue: 0 0 20px hsl(200 100% 50% / 0.3), 0 0 40px hsl(200 100% 50% / 0.1);
+    --shadow-neon-orange: 0 0 20px hsl(25 100% 55% / 0.3), 0 0 40px hsl(25 100% 55% / 0.1);
+    --shadow-glass: 0 8px 32px hsl(0 0% 0% / 0.1);
+  }
 }
 
 @layer base {
