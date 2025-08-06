@@ -86,7 +86,7 @@ const AdminImplementation = () => {
   const [selectedUserId, setSelectedUserId] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [loadingUsers, setLoadingUsers] = useState(false);
-  const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set());
+  const [expandedCard, setExpandedCard] = useState<string | null>(null);
   const [showDetailsDialog, setShowDetailsDialog] = useState<string | null>(null);
 
   const { toast } = useToast();
@@ -340,21 +340,13 @@ const AdminImplementation = () => {
 
 
   const toggleCardExpansion = (clientId: string) => {
-    setExpandedCards(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(clientId)) {
-        newSet.delete(clientId);
-      } else {
-        newSet.add(clientId);
-      }
-      return newSet;
-    });
+    setExpandedCard(prev => prev === clientId ? null : clientId);
   };
 
-  const isCardExpanded = (clientId: string) => expandedCards.has(clientId);
+  const isCardExpanded = (clientId: string) => expandedCard === clientId;
 
   const handleConfigurarClick = (clientId: string) => {
-    toggleCardExpansion(clientId);
+    setExpandedCard(prev => prev === clientId ? null : clientId);
   };
 
   const handleDetalhesClick = (clientId: string) => {
