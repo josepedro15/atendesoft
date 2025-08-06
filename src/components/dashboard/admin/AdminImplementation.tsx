@@ -87,6 +87,7 @@ const AdminImplementation = () => {
   const [loading, setLoading] = useState(true);
   const [loadingUsers, setLoadingUsers] = useState(false);
   const [expandedCard, setExpandedCard] = useState<string | null>(null);
+  const [forceUpdate, setForceUpdate] = useState(0);
   const [showDetailsDialog, setShowDetailsDialog] = useState<string | null>(null);
 
   const { toast } = useToast();
@@ -103,8 +104,6 @@ const AdminImplementation = () => {
       fetchAvailableUsers();
     }
   }, [showAddClientDialog]);
-
-
 
   const fetchData = async () => {
     try {
@@ -337,8 +336,6 @@ const AdminImplementation = () => {
     return Math.round((completedSteps / steps.length) * 100);
   };
 
-
-
   const toggleCardExpansion = (clientId: string) => {
     console.log('🔥 Toggle card:', clientId, 'Current expanded:', expandedCard);
     setExpandedCard(prev => {
@@ -346,6 +343,7 @@ const AdminImplementation = () => {
       console.log('🔥 New expanded card:', newValue);
       return newValue;
     });
+    setForceUpdate(prev => prev + 1);
   };
 
   const handleConfigurarClick = (clientId: string) => {
@@ -424,7 +422,7 @@ const AdminImplementation = () => {
         </div>
       </div>
 
-      {/* Lista de Clientes - Sem Abas */}
+      {/* Lista de Clientes */}
       <div className="w-full">
         {loading ? (
           <div className="flex items-center justify-center p-8">
@@ -444,12 +442,12 @@ const AdminImplementation = () => {
               </div>
             </CardContent>
           </Card>
-                ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
             {clients
               .sort((a, b) => getProgressPercentage(a) - getProgressPercentage(b))
               .map((client) => (
-                <Card key={client.user_id} className="card-glass w-full h-48 flex flex-col">
+                <Card key={`${client.user_id}-${forceUpdate}`} className="card-glass w-full h-48 flex flex-col">
                   <CardHeader className="pb-1 pt-2 px-3 flex-shrink-0">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
@@ -502,50 +500,50 @@ const AdminImplementation = () => {
                     </div>
                   </CardHeader>
                 
-                <CardContent className={`pt-0 px-3 pb-2 flex-1 ${expandedCard === client.user_id ? 'overflow-y-auto' : 'flex items-center justify-center'}`}>
-                  {expandedCard === client.user_id ? (
-                    <div className="space-y-1">
-                      {steps.map((step) => {
-                        const progress = client.progress.find(p => p.step_id === step.id);
-                        const status = progress?.status || 'pending';
-                        
-                        return (
-                          <div key={step.id} className="flex items-center justify-between p-1 rounded border border-border/50">
-                            <div className="flex items-center gap-1">
-                              {getStatusIcon(status)}
-                              <div>
-                                <h4 className="font-medium text-xs">{step.title}</h4>
-                                <p className="text-xs text-muted-foreground">{step.description}</p>
-                                {progress?.notes && (
-                                  <p className="text-xs text-muted-foreground italic">
-                                    {progress.notes}
-                                  </p>
-                                )}
+                  <CardContent className={`pt-0 px-3 pb-2 flex-1 ${expandedCard === client.user_id ? 'overflow-y-auto' : 'flex items-center justify-center'}`}>
+                    {expandedCard === client.user_id ? (
+                      <div className="space-y-1">
+                        {steps.map((step) => {
+                          const progress = client.progress.find(p => p.step_id === step.id);
+                          const status = progress?.status || 'pending';
+                          
+                          return (
+                            <div key={step.id} className="flex items-center justify-between p-1 rounded border border-border/50">
+                              <div className="flex items-center gap-1">
+                                {getStatusIcon(status)}
+                                <div>
+                                  <h4 className="font-medium text-xs">{step.title}</h4>
+                                  <p className="text-xs text-muted-foreground">{step.description}</p>
+                                  {progress?.notes && (
+                                    <p className="text-xs text-muted-foreground italic">
+                                      {progress.notes}
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                {getStatusBadge(status)}
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => setEditingProgress(progress || { id: 'new', user_id: client.user_id, step_id: step.id, status: 'pending', step } as UserProgress)}
+                                  className="h-5 px-1"
+                                >
+                                  <Edit className="h-3 w-3" />
+                                </Button>
                               </div>
                             </div>
-                            <div className="flex items-center gap-1">
-                              {getStatusBadge(status)}
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => setEditingProgress(progress || { id: 'new', user_id: client.user_id, step_id: step.id, status: 'pending', step } as UserProgress)}
-                                className="h-5 px-1"
-                              >
-                                <Edit className="h-3 w-3" />
-                              </Button>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  ) : (
-                    <div className="text-center text-muted-foreground">
-                      <p className="text-sm">Clique em "Configurar" para ver as etapas</p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            ))}
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <div className="text-center text-muted-foreground">
+                        <p className="text-sm">Clique em "Configurar" para ver as etapas</p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              ))}
           </div>
         )}
       </div>
