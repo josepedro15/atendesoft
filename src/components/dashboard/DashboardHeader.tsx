@@ -57,6 +57,7 @@ const DashboardHeader = () => {
       {/* Theme Toggle */}
       <div className="flex items-center gap-2">
         <ThemeToggle />
+        <span className="text-xs text-muted-foreground hidden md:inline">Tema</span>
         
         {/* User Menu */}
         <DropdownMenu>
