@@ -449,12 +449,12 @@ const AdminImplementation = () => {
             </CardContent>
           </Card>
                 ) : (
-          <div className="grid gap-2">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
             {clients
               .sort((a, b) => getProgressPercentage(a) - getProgressPercentage(b))
               .map((client) => (
-                <Card key={client.user_id} className="card-glass">
-                  <CardHeader className="pb-2 pt-3 px-4">
+                <Card key={client.user_id} className="card-glass max-w-md mx-auto">
+                  <CardHeader className="pb-1 pt-2 px-3">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <Button
@@ -469,9 +469,9 @@ const AdminImplementation = () => {
                             <ChevronRight className="h-3 w-3" />
                           )}
                         </Button>
-                        <div>
-                          <CardTitle className="text-sm font-medium">{client.full_name}</CardTitle>
-                          <CardDescription className="text-xs">{client.company}</CardDescription>
+                        <div className="min-w-0 flex-1">
+                          <CardTitle className="text-sm font-medium truncate">{client.full_name}</CardTitle>
+                          <CardDescription className="text-xs truncate">{client.company}</CardDescription>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
@@ -504,7 +504,7 @@ const AdminImplementation = () => {
                   </CardHeader>
                 
                 {isCardExpanded(client.user_id) && (
-                  <CardContent className="pt-0 px-4 pb-3">
+                  <CardContent className="pt-0 px-3 pb-2">
                     <div className="space-y-1">
                       {steps.map((step) => {
                         const progress = client.progress.find(p => p.step_id === step.id);
