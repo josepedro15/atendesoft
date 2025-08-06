@@ -447,8 +447,8 @@ const AdminImplementation = () => {
             {clients
               .sort((a, b) => getProgressPercentage(a) - getProgressPercentage(b))
               .map((client) => (
-                <Card key={`${client.user_id}-${forceUpdate}`} className="card-glass w-full h-48 flex flex-col">
-                  <CardHeader className="pb-1 pt-2 px-3 flex-shrink-0">
+                <Card key={`${client.user_id}-${forceUpdate}`} className="card-glass w-full">
+                  <CardHeader className="pb-1 pt-2 px-3">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <Button
@@ -500,7 +500,7 @@ const AdminImplementation = () => {
                     </div>
                   </CardHeader>
                 
-                  <CardContent className={`pt-0 px-3 pb-2 flex-1 ${expandedCard === client.user_id ? 'overflow-y-auto' : 'flex items-center justify-center'}`}>
+                  <CardContent className="pt-0 px-3 pb-2">
                     {expandedCard === client.user_id ? (
                       <div className="space-y-1">
                         {steps.map((step) => {
