@@ -340,12 +340,16 @@ const AdminImplementation = () => {
 
 
   const toggleCardExpansion = (clientId: string) => {
-    setExpandedCard(prev => prev === clientId ? null : clientId);
+    console.log('🔥 Toggle card:', clientId, 'Current expanded:', expandedCard);
+    setExpandedCard(prev => {
+      const newValue = prev === clientId ? null : clientId;
+      console.log('🔥 New expanded card:', newValue);
+      return newValue;
+    });
   };
 
-  const isCardExpanded = (clientId: string) => expandedCard === clientId;
-
   const handleConfigurarClick = (clientId: string) => {
+    console.log('🔥 Configurar click:', clientId);
     setExpandedCard(prev => prev === clientId ? null : clientId);
   };
 
@@ -455,7 +459,7 @@ const AdminImplementation = () => {
                           onClick={() => toggleCardExpansion(client.user_id)}
                           className="p-0 h-5 w-5"
                         >
-                          {isCardExpanded(client.user_id) ? (
+                          {expandedCard === client.user_id ? (
                             <ChevronDown className="h-3 w-3" />
                           ) : (
                             <ChevronRight className="h-3 w-3" />
@@ -495,7 +499,7 @@ const AdminImplementation = () => {
                     </div>
                   </CardHeader>
                 
-                {isCardExpanded(client.user_id) && (
+                {expandedCard === client.user_id && (
                   <CardContent className="pt-0 px-3 pb-2">
                     <div className="space-y-1">
                       {steps.map((step) => {
@@ -723,7 +727,7 @@ const AdminImplementation = () => {
                   </Button>
                   <Button onClick={() => {
                     setShowDetailsDialog(null);
-                    if (!isCardExpanded(client.user_id)) {
+                    if (expandedCard !== client.user_id) {
                       toggleCardExpansion(client.user_id);
                     }
                   }}>
