@@ -14,7 +14,7 @@ import "./App.css";
 const queryClient = new QueryClient();
 
 const App = () => (
-  <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
+  <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange={false}>
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <Sonner />
