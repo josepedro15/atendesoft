@@ -449,75 +449,76 @@ const AdminImplementation = () => {
             </CardContent>
           </Card>
         ) : (
-          <div className="grid gap-6">
-            {clients.map((client) => (
-              <Card key={client.user_id} className="card-glass">
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => toggleCardExpansion(client.user_id)}
-                        className="p-1 h-8 w-8"
-                      >
-                        {isCardExpanded(client.user_id) ? (
-                          <ChevronDown className="h-4 w-4" />
-                        ) : (
-                          <ChevronRight className="h-4 w-4" />
-                        )}
-                      </Button>
-                      <div>
-                        <CardTitle className="text-xl">{client.full_name}</CardTitle>
-                        <CardDescription>{client.company}</CardDescription>
-                        <p className="text-sm text-muted-foreground mt-1">{client.email}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <div className="text-right">
-                        <div className="text-2xl font-bold text-primary">
-                          {getProgressPercentage(client)}%
+          <div className="grid gap-4">
+            {clients
+              .sort((a, b) => getProgressPercentage(a) - getProgressPercentage(b))
+              .map((client) => (
+                              <Card key={client.user_id} className="card-glass">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => toggleCardExpansion(client.user_id)}
+                          className="p-1 h-6 w-6"
+                        >
+                          {isCardExpanded(client.user_id) ? (
+                            <ChevronDown className="h-3 w-3" />
+                          ) : (
+                            <ChevronRight className="h-3 w-3" />
+                          )}
+                        </Button>
+                        <div>
+                          <CardTitle className="text-lg">{client.full_name}</CardTitle>
+                          <CardDescription className="text-sm">{client.company}</CardDescription>
                         </div>
-                        <div className="text-sm text-muted-foreground">Progresso Geral</div>
                       </div>
                       <div className="flex items-center gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleDetalhesClick(client.user_id)}
-                          className="flex items-center gap-2"
-                        >
-                          <Info className="h-4 w-4" />
-                          Detalhes
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleConfigurarClick(client.user_id)}
-                          className="flex items-center gap-2"
-                        >
-                          <Settings className="h-4 w-4" />
-                          Configurar
-                        </Button>
+                        <div className="text-right">
+                          <div className="text-xl font-bold text-primary">
+                            {getProgressPercentage(client)}%
+                          </div>
+                          <div className="text-xs text-muted-foreground">Progresso</div>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleDetalhesClick(client.user_id)}
+                            className="h-7 px-2 text-xs"
+                          >
+                            <Info className="h-3 w-3 mr-1" />
+                            Detalhes
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleConfigurarClick(client.user_id)}
+                            className="h-7 px-2 text-xs"
+                          >
+                            <Settings className="h-3 w-3 mr-1" />
+                            Configurar
+                          </Button>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </CardHeader>
+                  </CardHeader>
                 
                 {isCardExpanded(client.user_id) && (
-                  <CardContent>
-                    <div className="space-y-4">
+                  <CardContent className="pt-0">
+                    <div className="space-y-2">
                       {steps.map((step) => {
                         const progress = client.progress.find(p => p.step_id === step.id);
                         const status = progress?.status || 'pending';
                         
                         return (
-                          <div key={step.id} className="flex items-center justify-between p-3 rounded-lg border border-border/50">
-                            <div className="flex items-center gap-3">
+                          <div key={step.id} className="flex items-center justify-between p-2 rounded-lg border border-border/50">
+                            <div className="flex items-center gap-2">
                               {getStatusIcon(status)}
                               <div>
-                                <h4 className="font-medium">{step.title}</h4>
-                                <p className="text-sm text-muted-foreground">{step.description}</p>
+                                <h4 className="font-medium text-sm">{step.title}</h4>
+                                <p className="text-xs text-muted-foreground">{step.description}</p>
                                 {progress?.notes && (
                                   <p className="text-xs text-muted-foreground mt-1 italic">
                                     {progress.notes}
@@ -525,14 +526,15 @@ const AdminImplementation = () => {
                                 )}
                               </div>
                             </div>
-                            <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-2">
                               {getStatusBadge(status)}
                               <Button
                                 variant="outline"
                                 size="sm"
                                 onClick={() => setEditingProgress(progress || { id: 'new', user_id: client.user_id, step_id: step.id, status: 'pending', step } as UserProgress)}
+                                className="h-6 px-2"
                               >
-                                <Edit className="h-4 w-4" />
+                                <Edit className="h-3 w-3" />
                               </Button>
                             </div>
                           </div>
