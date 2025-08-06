@@ -445,18 +445,21 @@ const AdminImplementation = () => {
             </CardContent>
           </Card>
                 ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
             {clients
               .sort((a, b) => getProgressPercentage(a) - getProgressPercentage(b))
               .map((client) => (
-                <Card key={client.user_id} className="card-glass max-w-md mx-auto h-48 flex flex-col">
+                <Card key={client.user_id} className="card-glass w-full h-48 flex flex-col">
                   <CardHeader className="pb-1 pt-2 px-3 flex-shrink-0">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => toggleCardExpansion(client.user_id)}
+                          onClick={() => {
+                            console.log('🔥 Clique no botão expandir para:', client.user_id);
+                            toggleCardExpansion(client.user_id);
+                          }}
                           className="p-0 h-5 w-5"
                         >
                           {expandedCard === client.user_id ? (
