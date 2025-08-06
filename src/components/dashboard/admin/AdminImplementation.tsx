@@ -448,20 +448,20 @@ const AdminImplementation = () => {
               </div>
             </CardContent>
           </Card>
-        ) : (
-          <div className="grid gap-4">
+                ) : (
+          <div className="grid gap-2">
             {clients
               .sort((a, b) => getProgressPercentage(a) - getProgressPercentage(b))
               .map((client) => (
-                              <Card key={client.user_id} className="card-glass">
-                  <CardHeader className="pb-3">
+                <Card key={client.user_id} className="card-glass">
+                  <CardHeader className="pb-2 pt-3 px-4">
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-2">
                         <Button
                           variant="ghost"
                           size="sm"
                           onClick={() => toggleCardExpansion(client.user_id)}
-                          className="p-1 h-6 w-6"
+                          className="p-0 h-5 w-5"
                         >
                           {isCardExpanded(client.user_id) ? (
                             <ChevronDown className="h-3 w-3" />
@@ -470,13 +470,13 @@ const AdminImplementation = () => {
                           )}
                         </Button>
                         <div>
-                          <CardTitle className="text-lg">{client.full_name}</CardTitle>
-                          <CardDescription className="text-sm">{client.company}</CardDescription>
+                          <CardTitle className="text-sm font-medium">{client.full_name}</CardTitle>
+                          <CardDescription className="text-xs">{client.company}</CardDescription>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
                         <div className="text-right">
-                          <div className="text-xl font-bold text-primary">
+                          <div className="text-lg font-bold text-primary">
                             {getProgressPercentage(client)}%
                           </div>
                           <div className="text-xs text-muted-foreground">Progresso</div>
@@ -486,19 +486,17 @@ const AdminImplementation = () => {
                             variant="outline"
                             size="sm"
                             onClick={() => handleDetalhesClick(client.user_id)}
-                            className="h-7 px-2 text-xs"
+                            className="h-6 px-2 text-xs"
                           >
-                            <Info className="h-3 w-3 mr-1" />
-                            Detalhes
+                            <Info className="h-3 w-3" />
                           </Button>
                           <Button
                             variant="outline"
                             size="sm"
                             onClick={() => handleConfigurarClick(client.user_id)}
-                            className="h-7 px-2 text-xs"
+                            className="h-6 px-2 text-xs"
                           >
-                            <Settings className="h-3 w-3 mr-1" />
-                            Configurar
+                            <Settings className="h-3 w-3" />
                           </Button>
                         </div>
                       </div>
@@ -506,33 +504,33 @@ const AdminImplementation = () => {
                   </CardHeader>
                 
                 {isCardExpanded(client.user_id) && (
-                  <CardContent className="pt-0">
-                    <div className="space-y-2">
+                  <CardContent className="pt-0 px-4 pb-3">
+                    <div className="space-y-1">
                       {steps.map((step) => {
                         const progress = client.progress.find(p => p.step_id === step.id);
                         const status = progress?.status || 'pending';
                         
                         return (
-                          <div key={step.id} className="flex items-center justify-between p-2 rounded-lg border border-border/50">
-                            <div className="flex items-center gap-2">
+                          <div key={step.id} className="flex items-center justify-between p-1 rounded border border-border/50">
+                            <div className="flex items-center gap-1">
                               {getStatusIcon(status)}
                               <div>
-                                <h4 className="font-medium text-sm">{step.title}</h4>
+                                <h4 className="font-medium text-xs">{step.title}</h4>
                                 <p className="text-xs text-muted-foreground">{step.description}</p>
                                 {progress?.notes && (
-                                  <p className="text-xs text-muted-foreground mt-1 italic">
+                                  <p className="text-xs text-muted-foreground italic">
                                     {progress.notes}
                                   </p>
                                 )}
                               </div>
                             </div>
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-1">
                               {getStatusBadge(status)}
                               <Button
                                 variant="outline"
                                 size="sm"
                                 onClick={() => setEditingProgress(progress || { id: 'new', user_id: client.user_id, step_id: step.id, status: 'pending', step } as UserProgress)}
-                                className="h-6 px-2"
+                                className="h-5 px-1"
                               >
                                 <Edit className="h-3 w-3" />
                               </Button>
